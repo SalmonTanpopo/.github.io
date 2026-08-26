@@ -868,10 +868,10 @@ function getCurrentStandalone() {
    消費ダスト
 ========================= */
 const DUST_VALUES = {
-  rare: { normal: 100, other: 2700 },
-  epic: { normal: 2700, other: 4000 },
-  legendary: { normal: 4500, other: 6750 },
-  mythic: { normal: 6750, other: 10000 }
+  rare: { normal: 100, other: 1500 },
+  epic: { normal: 1500, other: 1800 },
+  legendary: { normal: 1750, other: 2100 },
+  mythic: { normal: 2000, other: 2400 }
 };
 
 /* =========================
@@ -1292,30 +1292,32 @@ function renderPagination() {
 }
 
 /* =========================
-   全アイテムキー取得 (全ページ合計)
+   全アイテムキー取得 (現在ページのみ)
 ========================= */
-function getAllCollectionKeys() {
+function getCurrentPageCollectionKeys() {
   const keys = new Set();
-  PAGES.forEach(page => {
-    page.collection.forEach(row => {
-      row.types.forEach(typeData => {
-        getVariants(typeData).forEach(variant => {
-          keys.add(getStorageKey(typeData.type, variant));
-        });
+  const page = PAGES[currentPageIndex];
+  
+  page.collection.forEach(row => {
+    row.types.forEach(typeData => {
+      getVariants(typeData).forEach(variant => {
+        keys.add(getStorageKey(typeData.type, variant));
       });
     });
-    page.standalone.forEach(item => {
-      keys.add(getStorageKey(item.type, null));
-    });
   });
+  
+  page.standalone.forEach(item => {
+    keys.add(getStorageKey(item.type, null));
+  });
+  
   return [...keys];
 }
 
 /* =========================
-   カウンター更新 (全ページ合計)
+   カウンター更新 (現在ページのみ)
 ========================= */
 function updateCounter() {
-  const keys = getAllCollectionKeys();
+  const keys = getCurrentPageCollectionKeys();
   const checkedCount = keys.reduce((count, key) => {
     return count + (localStorage.getItem(key) === "true" ? 1 : 0);
   }, 0);
