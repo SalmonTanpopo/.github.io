@@ -1466,30 +1466,6 @@ function findLargestItemSize() {
   return Math.max(AUTO_FIT.minItemSize, Math.floor(low * 10) / 10);
 }
 
-function contentFitsWidthOnly() {
-  const available = getAvailableSize();
-  const widthTargets = [...gallery.children];
-  const contentWidth = widthTargets.reduce((maxWidth, element) => {
-    return Math.max(maxWidth, element.getBoundingClientRect().width);
-  }, 0);
-  return contentWidth <= available.width;
-}
-
-function findLargestItemSizeWidthOnly() {
-  let low = AUTO_FIT.minItemSize;
-  let high = AUTO_FIT.maxItemSize;
-  for (let i = 0; i < 14; i++) {
-    const middle = (low + high) / 2;
-    root.style.setProperty("--item-size", `${middle}px`);
-    if (contentFitsWidthOnly()) {
-      low = middle;
-    } else {
-      high = middle;
-    }
-  }
-  return Math.max(AUTO_FIT.minItemSize, Math.floor(low * 10) / 10);
-}
-
 function applyAutoLayout() {
   root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
 }
