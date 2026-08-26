@@ -736,7 +736,8 @@ const VARIANT_DISPLAY_ORDER = [
   "holofoil",
   "cube",
   "gem",
-  "quack"
+  "quack",
+  "cheat-master" // 新規追加
 ];
 
 /* =========================
@@ -753,7 +754,8 @@ const MOBILE_SECONDARY_VARIANTS = [
   "holofoil",
   "cube",
   "gem",
-  "quack"
+  "quack",
+  "cheat-master" // 新規追加
 ];
 
 /* =========================
@@ -761,16 +763,38 @@ const MOBILE_SECONDARY_VARIANTS = [
 ========================= */
 const PAGES = [
   {
-    label: "ページ１",
+    label: "ページ1",
     collection: [
       {
-        rarity: "rare", // 仮レアリティ
+        rarity: "rare",
         types: [
-          { type: "A", variants: ["normal", "gold"] },
-          { type: "B", variants: ["normal", "gold"] },
-          { type: "C", variants: ["normal", "gold"] },
-          { type: "D", variants: ["normal", "gold"] },
-          { type: "E", variants: ["normal", "gold"] }
+          { type: "bush", variants: ["normal", "gold", "cheat-master"] },
+          { type: "adventure", variants: ["normal", "gold", "cheat-master"] },
+          { type: "jonesy", variants: ["normal", "gold", "cheat-master"] },
+          { type: "8-bit", variants: ["normal", "gold", "cheat-master"] },
+          { type: "storm-scout", variants: ["normal", "gold", "cheat-master"] }
+        ]
+      },
+      {
+        rarity: "epic",
+        types: [
+          { type: "shadow", variants: ["normal", "gold", "cheat-master"] },
+          { type: "tails", variants: ["normal", "gold", "cheat-master"] },
+          { type: "killswitch", variants: ["normal", "gold", "cheat-master"] },
+          { type: "sonic", variants: ["normal", "gold", "cheat-master"] }
+        ]
+      },
+      {
+        rarity: "legendary",
+        types: [
+          { type: "jackrabbit", variants: ["normal", "gold", "cheat-master"] }
+        ]
+      },
+      {
+        rarity: "mythic",
+        types: [
+          { type: "klombo", variants: ["normal", "gold", "cheat-master"] },
+          { type: "crown", variants: ["normal", "gold", "cheat-master"] }
         ]
       }
     ],
