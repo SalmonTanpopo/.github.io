@@ -466,6 +466,64 @@ body.is-saving .controls {
 }
 
 /* =========================
+   画像保存用オーバーレイ（アプリ内ブラウザ対策）
+========================= */
+#save-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  touch-action: none;
+}
+
+#save-overlay.active {
+  display: flex;
+}
+
+#save-overlay-message {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+#save-overlay-img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  /* 長押し保存を有効にするために明示的に指定 */
+  pointer-events: auto;
+  user-select: auto;
+  -webkit-user-select: auto;
+  -webkit-touch-callout: default;
+}
+
+#save-overlay-close {
+  margin-top: 25px;
+  padding: 12px 40px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333333;
+  background: #ffffff;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* =========================
    PC版
 ========================= */
 @media (min-width: 769px) {
@@ -732,6 +790,13 @@ body.is-saving .controls {
     <div id="gallery"></div>
 
   </div>
+</div>
+
+<!-- スマホ用画像保存オーバーレイ -->
+<div id="save-overlay">
+  <div id="save-overlay-message">画像を長押しして「写真に追加」または「保存」を選んでください</div>
+  <img id="save-overlay-img" alt="保存用コレクション画像">
+  <button id="save-overlay-close">閉じる</button>
 </div>
 
 <script>
@@ -1480,10 +1545,6 @@ function cropControlSpace(sourceCanvas) {
   return croppedCanvas;
 }
 
-function isIOSLikeDevice() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-}
-
 function canvasToPNGBlob(canvas) {
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => {
@@ -1508,71 +1569,28 @@ function downloadPNGBlob(blob, fileName) {
   window.setTimeout(() => { URL.revokeObjectURL(objectURL); }, 60000);
 }
 
-function showIOSSavePreview(blob, previewWindow) {
-  const objectURL = URL.createObjectURL(blob);
-  if (previewWindow && !previewWindow.closed) {
-    previewWindow.document.open();
-    previewWindow.document.write(
-      `<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>コレクション画像</title>
-<style>
-html, body { margin: 0; min-height: 100%; background: #111111; color: #ffffff; font-family: sans-serif; }
-body { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px; }
-p { margin: 0; font-size: 14px; text-align: center; }
-img { display: block; width: 100%; height: auto; object-fit: contain; -webkit-touch-callout: default; }
-</style>
-</head>
-<body>
-<p>画像を長押しして「写真に保存」を選んでください。</p>
-<img id="collection-save-image" alt="保存用コレクション画像">
-</body>
-</html>`
-    );
-    previewWindow.document.close();
-    const previewImage = previewWindow.document.getElementById("collection-save-image");
-    if (previewImage) {
-      previewImage.src = objectURL;
-    } else {
-      previewWindow.location.href = objectURL;
-    }
-  } else {
-    window.location.href = objectURL;
-  }
-  window.setTimeout(() => { URL.revokeObjectURL(objectURL); }, 60000);
-}
-
 let savingPNG = false;
+let currentObjectURL = null;
+
+const saveOverlay = document.getElementById("save-overlay");
+const saveOverlayImg = document.getElementById("save-overlay-img");
+const saveOverlayClose = document.getElementById("save-overlay-close");
+
+// オーバーレイを閉じる処理
+saveOverlayClose.addEventListener("click", () => {
+  saveOverlay.classList.remove("active");
+  saveOverlayImg.src = "";
+  if (currentObjectURL) {
+    URL.revokeObjectURL(currentObjectURL);
+    currentObjectURL = null;
+  }
+});
 
 async function savePNG() {
   if (savingPNG) return;
   savingPNG = true;
   
   const originalButtonText = saveButton.textContent;
-  const useIOSPreview = isIOSLikeDevice();
-  const previewWindow = useIOSPreview ? window.open("", "_blank") : null;
-  
-  if (previewWindow) {
-    previewWindow.document.open();
-    previewWindow.document.write(
-      `<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>画像作成中</title>
-<style>
-body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #111111; color: #ffffff; font-family: sans-serif; }
-</style>
-</head>
-<body>画像を作成しています…</body>
-</html>`
-    );
-    previewWindow.document.close();
-  }
   
   saveButton.disabled = true;
   saveButton.textContent = "作成中";
@@ -1602,14 +1620,22 @@ body { margin: 0; min-height: 100vh; display: grid; place-items: center; backgro
     const saveCanvas = cropControlSpace(fullCanvas);
     const pngBlob = await canvasToPNGBlob(saveCanvas);
     
-    if (useIOSPreview) {
-      showIOSSavePreview(pngBlob, previewWindow);
+    // アプリ内ブラウザ対策:
+    // スマホ版（画面幅768px以下）の場合は、ダウンロードリンクではなくオーバーレイで画像を表示
+    if (isMobileView()) {
+      if (currentObjectURL) {
+        URL.revokeObjectURL(currentObjectURL);
+      }
+      currentObjectURL = URL.createObjectURL(pngBlob);
+      saveOverlayImg.src = currentObjectURL;
+      saveOverlay.classList.add("active");
     } else {
+      // PC等の場合はそのままダウンロード
       downloadPNGBlob(pngBlob, `collection_page${currentPageIndex + 1}.png`);
     }
+    
   } catch (error) {
     console.error(error);
-    if (previewWindow && !previewWindow.closed) previewWindow.close();
     alert("画像を保存できませんでした。ページを再読み込みして、もう一度お試しください。");
   } finally {
     saveButton.disabled = false;
