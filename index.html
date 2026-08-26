@@ -1169,6 +1169,12 @@ function renderMobileVariantView() {
     }
   }
   
+  // スマホ版の列数計算: ページ内のtype数が20未満なら半分で改行する
+  let columnLimit = 10;
+  if (typeOrder.length > 0 && typeOrder.length < 20) {
+    columnLimit = Math.ceil(typeOrder.length / 2);
+  }
+  
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
   
@@ -1230,7 +1236,7 @@ function renderMobileVariantView() {
   for (const variant of MOBILE_PRIMARY_VARIANTS) {
     const matchingTypes = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matchingTypes.length === 0) continue;
-    primaryArea.appendChild(createCompactVariantGroup(variant, matchingTypes, 10, true));
+    primaryArea.appendChild(createCompactVariantGroup(variant, matchingTypes, columnLimit, true));
   }
   layout.appendChild(primaryArea);
   
@@ -1239,7 +1245,7 @@ function renderMobileVariantView() {
   for (const variant of MOBILE_SECONDARY_VARIANTS) {
     const matchingTypes = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matchingTypes.length === 0) continue;
-    secondaryArea.appendChild(createCompactVariantGroup(variant, matchingTypes, 10, false));
+    secondaryArea.appendChild(createCompactVariantGroup(variant, matchingTypes, columnLimit, false));
   }
   layout.appendChild(secondaryArea);
   
