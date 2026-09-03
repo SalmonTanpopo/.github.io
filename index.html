@@ -654,7 +654,9 @@ body.is-saving .controls {
   }
 
   .mobile-variant-special {
-    width: max-content;
+    /* ラベルの横幅ではなく、rockmanの画像幅を基準に中央配置する */
+    position: relative;
+    width: var(--item-size);
 
     display: flex;
     flex-direction: column;
@@ -665,17 +667,19 @@ body.is-saving .controls {
   }
 
   .mobile-variant-special-header {
-    width: 100%;
+    width: var(--item-size);
     height: 13px;
 
     display: flex;
     align-items: center;
     justify-content: flex-start;
 
-    padding: 0 1px;
+    padding: 0;
   }
 
   .mobile-variant-special-label {
+    /* ラベル自体がSPECIAL行の幅を広げない */
+    width: max-content;
     padding: 1px 4px;
 
     color: #ffffff;
