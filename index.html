@@ -540,10 +540,10 @@ body.is-saving .controls {
     padding-right: 6px;
   }
 
-  /* cheat-master / loot-hacker は長いため、スマホ版と同じくラベルを画像列の上へ置く */
+  /* PC版もスマホ版と同じく、各variant名を「そのvariantの最も左上の画像」の上に配置 */
   .variant-view-row.pc-top-label-variant {
     position: relative;
-    padding-top: 17px;
+    padding-top: 20px;
   }
 
   .variant-view-row.pc-top-label-variant .variant-view-header {
@@ -552,20 +552,16 @@ body.is-saving .controls {
     left: calc(var(--variant-label-column-width) + 6px);
 
     width: auto;
-    height: 14px;
+    height: auto;
     flex-basis: auto;
 
     justify-content: flex-start;
   }
 
   .variant-view-row.pc-top-label-variant .variant-view-label {
+    /* 元のPC版と同じ文字サイズ・見た目を維持 */
     width: auto;
     max-width: none;
-    padding: 1px 4px;
-
-    font-size: 10px;
-    line-height: 1;
-
     overflow: visible;
     text-overflow: unset;
   }
@@ -660,15 +656,15 @@ body.is-saving .controls {
     gap: 3px;
   }
 
-  /* SPECIAL はPC版と同じく standalone の左側へ置く */
+  /* SPECIAL も他のスマホ版variant表記と同じく左端に寄せる */
   .mobile-variant-special-header {
-    flex: 0 0 var(--variant-label-column-width);
-    width: var(--variant-label-column-width);
+    flex: 0 0 auto;
+    width: auto;
     height: var(--item-size);
 
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
 
     pointer-events: none;
   }
@@ -1228,10 +1224,7 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
   const label = document.createElement("div");
   const itemArea = document.createElement("div");
   
-  row.className = "variant-view-row";
-  if (labelText === "cheat-master" || labelText === "loot-hacker") {
-    row.classList.add("pc-top-label-variant");
-  }
+  row.className = "variant-view-row pc-top-label-variant";
   header.className = "variant-view-header";
   label.className = "variant-view-label";
   label.textContent = labelText;
