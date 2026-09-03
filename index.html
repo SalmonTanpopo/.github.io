@@ -317,11 +317,11 @@ body.is-saving #pagination-area {
 }
 
 .mobile-variant-special-items {
-  display: grid;
-  grid-template-columns: repeat(5, var(--item-size));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 
-  gap: var(--gap-item);
-  justify-content: center;
+    gap: var(--gap-item);
 }
 
 .mobile-compact-variant-items {
@@ -667,14 +667,14 @@ body.is-saving .controls {
   }
 
   .mobile-variant-special-header {
-    width: var(--item-size);
+    width: 100%;
     height: 13px;
 
     display: flex;
     align-items: center;
     justify-content: flex-start;
 
-    padding: 0;
+    padding: 0 1px;
   }
 
   .mobile-variant-special-label {
