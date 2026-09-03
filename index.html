@@ -538,9 +538,20 @@ body.is-saving .controls {
 ========================= */
 @media (min-width: 769px) {
   #capture {
+    position:relative;
     padding-right: 6px;
   }
+  /* ヘッダーの相対配置を解除してボタンの位置基準を#captureに譲る */
+  #header-area {
+    position: static;
+  }
 
+  /* ボタンの位置を右上に固定し、少し下げる */
+  .controls {
+    top: 18px; /* ★上からの位置（数値を大きくするとより下がります） */
+    right: 20px; /* ★右からの位置 */
+    transform: none;
+  }
   /* PC版もスマホ版と同じく、各variant名を「そのvariantの最も左上の画像」の上に配置 */
   .variant-view-row.pc-top-label-variant {
     position: relative;
