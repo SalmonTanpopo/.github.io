@@ -821,7 +821,8 @@ const VARIANT_DISPLAY_ORDER = [
   "cube",
   "gem",
   "quack",
-  "cheat-master" // 新規追加
+  "cheat-master", // 新規追加
+  "loot-hacker"
 ];
 
 /* =========================
@@ -831,15 +832,16 @@ const MOBILE_PRIMARY_VARIANTS = [
   "normal",
   "gold",
   "gummy",
-  "galaxy"
+  "galaxy",
+  "cheat-master", // 新規追加
+  "loot-hacker"
 ];
 
 const MOBILE_SECONDARY_VARIANTS = [
   "holofoil",
   "cube",
   "gem",
-  "quack",
-  "cheat-master" // 新規追加
+  "quack"
 ];
 
 /* =========================
@@ -852,33 +854,33 @@ const PAGES = [
       {
         rarity: "rare",
         types: [
-          { type: "bush", variants: ["normal", "gold", "cheat-master"] },
-          { type: "adventure", variants: ["normal", "gold", "cheat-master"] },
-          { type: "jonesy", variants: ["normal", "gold", "cheat-master"] },
-          { type: "8-bit", variants: ["normal", "gold", "cheat-master"] },
-          { type: "stormscout", variants: ["normal", "gold", "cheat-master"] }
+          { type: "bush", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "adventure", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "jonesy", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "8-bit", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "stormscout", variants: ["normal", "gold", "cheat-master","loot-hacker"] }
         ]
       },
       {
         rarity: "epic",
         types: [
-          { type: "shadow", variants: ["normal", "gold", "cheat-master"] },
-          { type: "tails", variants: ["normal", "gold", "cheat-master"] },
-          { type: "killswitch", variants: ["normal", "gold", "cheat-master"] },
-          { type: "sonic", variants: ["normal", "gold", "cheat-master"] }
+          { type: "shadow", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "tails", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "killswitch", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "sonic", variants: ["normal", "gold", "cheat-master","loot-hacker"] }
         ]
       },
       {
         rarity: "legendary",
         types: [
-          { type: "jackrabbit", variants: ["normal", "gold", "cheat-master"] }
+          { type: "jackrabbit", variants: ["normal", "gold", "cheat-master","loot-hacker"] }
         ]
       },
       {
         rarity: "mythic",
         types: [
-          { type: "klombo", variants: ["normal", "gold", "cheat-master"] },
-          { type: "crown", variants: ["normal", "gold", "cheat-master"] }
+          { type: "klombo", variants: ["normal", "gold", "cheat-master","loot-hacker"] },
+          { type: "crown", variants: ["normal", "gold", "cheat-master","loot-hacker"] }
         ]
       }
     ],
