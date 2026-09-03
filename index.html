@@ -539,7 +539,38 @@ body.is-saving .controls {
   #capture {
     padding-right: 6px;
   }
+
+  /* cheat-master / loot-hacker は長いため、スマホ版と同じくラベルを画像列の上へ置く */
+  .variant-view-row.pc-top-label-variant {
+    position: relative;
+    padding-top: 17px;
+  }
+
+  .variant-view-row.pc-top-label-variant .variant-view-header {
+    position: absolute;
+    top: 2px;
+    left: calc(var(--variant-label-column-width) + 6px);
+
+    width: auto;
+    height: 14px;
+    flex-basis: auto;
+
+    justify-content: flex-start;
+  }
+
+  .variant-view-row.pc-top-label-variant .variant-view-label {
+    width: auto;
+    max-width: none;
+    padding: 1px 4px;
+
+    font-size: 10px;
+    line-height: 1;
+
+    overflow: visible;
+    text-overflow: unset;
+  }
 }
+
 
 /* =========================
    スマホ版
@@ -623,8 +654,44 @@ body.is-saving .controls {
   }
 
   .mobile-variant-special {
-    display: block;
-    padding: 0;
+    display: flex;
+    align-items: center;
+    padding: 2px 3px;
+    gap: 3px;
+  }
+
+  /* SPECIAL はPC版と同じく standalone の左側へ置く */
+  .mobile-variant-special-header {
+    flex: 0 0 var(--variant-label-column-width);
+    width: var(--variant-label-column-width);
+    height: var(--item-size);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    pointer-events: none;
+  }
+
+  .mobile-variant-special-label {
+    padding: 1px 4px;
+
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.78);
+
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 3px;
+
+    font-family: "Impact", "Arial Black", sans-serif;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
+    -webkit-text-stroke: 0.35px #000000;
+
+    pointer-events: none;
   }
 
   .mobile-primary-variants,
@@ -1162,6 +1229,9 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
   const itemArea = document.createElement("div");
   
   row.className = "variant-view-row";
+  if (labelText === "cheat-master" || labelText === "loot-hacker") {
+    row.classList.add("pc-top-label-variant");
+  }
   header.className = "variant-view-header";
   label.className = "variant-view-label";
   label.textContent = labelText;
@@ -1272,13 +1342,22 @@ function renderMobileVariantView() {
   const standalones = getCurrentStandalone();
   if (standalones.length > 0) {
     const special = document.createElement("div");
+    const specialHeader = document.createElement("div");
+    const specialLabel = document.createElement("div");
     const specialItems = document.createElement("div");
+
     special.className = "mobile-variant-special";
+    specialHeader.className = "mobile-variant-special-header";
+    specialLabel.className = "mobile-variant-special-label";
+    specialLabel.textContent = "special";
     specialItems.className = "mobile-variant-special-items";
+
+    specialHeader.appendChild(specialLabel);
     for (const { type } of standalones) {
       specialItems.appendChild(createCollectionItem(type, null));
     }
-    special.appendChild(specialItems);
+
+    special.append(specialHeader, specialItems);
     layout.appendChild(special);
   }
   
