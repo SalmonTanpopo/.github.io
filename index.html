@@ -1613,28 +1613,53 @@ async function waitForImages(target) {
 }
 
 function cropControlSpace(sourceCanvas) {
-  const captureStyle = getComputedStyle(capture);
-  const leftPadding = parseFloat(captureStyle.paddingLeft) || 0;
-  const rightPadding = parseFloat(captureStyle.paddingRight) || 0;
-  const extraRightSpace = Math.max(0, rightPadding - leftPadding);
-  
-  if (extraRightSpace === 0) return sourceCanvas;
-  
-  const canvasScale = sourceCanvas.width / capture.clientWidth;
-  const croppedWidth = Math.max(1, Math.round(sourceCanvas.width - extraRightSpace * canvasScale));
-  
+  /*
+   * 保存画像は #capture 全体ではなく、
+   * 「TOTAL ～ SPECIAL」の実コンテンツ部分だけを切り出す。
+   *
+   * #collection-content の中には
+   * TOTAL / ページボタン / gallery（SPECIALを含む）
+   * が入っているため、その外側にできる上下の余白を除去する。
+   */
+  const contentRect = collectionContent.getBoundingClientRect();
+  const captureRect = capture.getBoundingClientRect();
+
+  const canvasScaleX = sourceCanvas.width / captureRect.width;
+  const canvasScaleY = sourceCanvas.height / captureRect.height;
+
+  const left = Math.max(
+    0,
+    Math.round((contentRect.left - captureRect.left) * canvasScaleX)
+  );
+  const top = Math.max(
+    0,
+    Math.round((contentRect.top - captureRect.top) * canvasScaleY)
+  );
+  const right = Math.min(
+    sourceCanvas.width,
+    Math.round((contentRect.right - captureRect.left) * canvasScaleX)
+  );
+  const bottom = Math.min(
+    sourceCanvas.height,
+    Math.round((contentRect.bottom - captureRect.top) * canvasScaleY)
+  );
+
+  const croppedWidth = Math.max(1, right - left);
+  const croppedHeight = Math.max(1, bottom - top);
+
   const croppedCanvas = document.createElement("canvas");
   croppedCanvas.width = croppedWidth;
-  croppedCanvas.height = sourceCanvas.height;
-  
+  croppedCanvas.height = croppedHeight;
+
   const ctx = croppedCanvas.getContext("2d");
   if (!ctx) return sourceCanvas;
-  
+
   ctx.drawImage(
     sourceCanvas,
-    0, 0, croppedWidth, sourceCanvas.height,
-    0, 0, croppedWidth, sourceCanvas.height
+    left, top, croppedWidth, croppedHeight,
+    0, 0, croppedWidth, croppedHeight
   );
+
   return croppedCanvas;
 }
 
