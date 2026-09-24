@@ -857,7 +857,7 @@ body.is-saving .controls {
   .check-canvas {
     left: 10% !important;
     top: 40% !important;
-    width: 100% !important;
+    width: 80% !important;
     height: 80% !important;
   }
 }
@@ -1639,7 +1639,7 @@ function cropControlSpace(sourceCanvas) {
   );
   const top = Math.max(
     0,
-    Math.round((contentRect.top - captureRect.top) * canvasScaleY)
+    Math.round((contentRect.top - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
   );
   const right = Math.min(
     sourceCanvas.width,
@@ -1647,7 +1647,7 @@ function cropControlSpace(sourceCanvas) {
   );
   const bottom = Math.min(
     sourceCanvas.height,
-    Math.round((contentRect.bottom - captureRect.top) * canvasScaleY)
+    Math.round((contentRect.bottom - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
   );
 
   const croppedWidth = Math.max(1, right - left);
