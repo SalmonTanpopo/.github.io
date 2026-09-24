@@ -344,7 +344,7 @@ body.is-saving #pagination-area {
 /* =========================
    アイテム
 ========================= */
-/* .item {
+.item {
   position: relative;
 
   width: var(--item-size);
@@ -365,11 +365,11 @@ body.is-saving #pagination-area {
   height: 100%;
 
   object-fit: cover;
-} */
+}
 /* =========================
    アイテム
 ========================= */
-.item {
+/* .item {
   position: relative;
 
   width: var(--item-size);
@@ -378,17 +378,13 @@ body.is-saving #pagination-area {
   flex-shrink: 0;
 
   cursor: pointer;
-
-  /* 変化をなめらかにする設定 */
   transition: filter 0.2s ease, opacity 0.2s ease;
 }
 
-/* チェックが【ついていない】アイテム（くっきり明るくして目立たせる） */
 .item:not(.checked) {
   filter: brightness(1.1) contrast(1.05);
 }
 
-/* チェックが【ついている】アイテム（少し暗くして控えめにする） */
 .item.checked {
   filter: brightness(0.7) grayscale(0.2);
   opacity: 0.85;
@@ -405,7 +401,7 @@ body.is-saving #pagination-area {
 
   object-fit: cover;
   border-radius: 4px;
-}
+} */
 
 /* =========================
    チェックマーク
