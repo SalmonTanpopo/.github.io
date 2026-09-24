@@ -183,6 +183,15 @@ body.is-saving #pagination-area {
 /* =========================
    バリアントごとの表示
 ========================= */
+.unchecked-flat-items {
+  display: grid;
+  grid-template-columns: repeat(var(--unchecked-flat-column-count), var(--item-size));
+  grid-auto-rows: var(--item-size);
+  gap: var(--gap-item);
+  justify-content: center;
+  align-content: center;
+}
+
 .variant-view-row {
   flex: 0 0 auto;
 
@@ -1277,22 +1286,38 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
   
   itemArea.className = "variant-view-items";
   if (!showBulkCheckbox) itemArea.classList.add("no-bulk-checkbox");
-  itemArea.style.setProperty("--variant-view-column-count", Math.max(1, typeOrder.length));
-  
-  let itemCountInRow = 0;
+
+  // 通常モードでは既存の枠・並びを維持する。
+  // 未獲得のみモードでは、獲得済みアイテム用の空枠を作らず、
+  // 残ったアイテムだけで詰め直す。これにより画像サイズも
+  // 「元の全アイテム数」ではなく「現在表示するアイテム数」に
+  // 合わせて自動調整される。
+  const visibleItems = [];
   for (const type of typeOrder) {
     const item = itemsByType.get(type);
-    if (item) {
-      if (showUncheckedOnly && isItemChecked(item.type, item.variant)) {
-        itemArea.appendChild(createVariantViewPlaceholder());
-      } else {
+    if (!item) continue;
+    if (showUncheckedOnly && isItemChecked(item.type, item.variant)) continue;
+    visibleItems.push(item);
+  }
+
+  if (showUncheckedOnly) {
+    itemArea.style.setProperty("--variant-view-column-count", Math.max(1, visibleItems.length));
+    for (const item of visibleItems) {
+      itemArea.appendChild(createCollectionItem(item.type, item.variant));
+    }
+  } else {
+    itemArea.style.setProperty("--variant-view-column-count", Math.max(1, typeOrder.length));
+    for (const type of typeOrder) {
+      const item = itemsByType.get(type);
+      if (item) {
         itemArea.appendChild(createCollectionItem(item.type, item.variant));
-        itemCountInRow++;
+      } else {
+        itemArea.appendChild(createVariantViewPlaceholder());
       }
-    } else {
-      itemArea.appendChild(createVariantViewPlaceholder());
     }
   }
+
+  const itemCountInRow = visibleItems.length;
   
   // 未獲得のみモードで行内に表示対象アイテムがない場合は非表示
   if (showUncheckedOnly && itemCountInRow === 0) {
@@ -1411,11 +1436,20 @@ function renderMobileVariantView() {
     body.className = "mobile-compact-variant-body";
     items.className = "mobile-compact-variant-items";
     
+    const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
+
     if (primary) {
       items.classList.add("mobile-primary-variant-items");
-      items.style.setProperty("--mobile-primary-column-count", columnLimit);
+      // 未獲得のみでは、獲得済みを除いた実際の表示数で再配置する。
+      items.style.setProperty(
+        "--mobile-primary-column-count",
+        showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit
+      );
     } else {
-      items.style.setProperty("--mobile-secondary-column-count", columnLimit);
+      items.style.setProperty(
+        "--mobile-secondary-column-count",
+        showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit
+      );
     }
     
     const bulkCheckbox = createMobileVariantBulkCheckbox(variant);
@@ -1427,11 +1461,9 @@ function renderMobileVariantView() {
     });
     
     header.appendChild(label);
-    let itemCount = 0;
-    for (const type of matchingTypes) {
-      if (showUncheckedOnly && isItemChecked(type, variant)) continue;
+    const itemCount = visibleTypes.length;
+    for (const type of visibleTypes) {
       items.appendChild(createCollectionItem(type, variant));
-      itemCount++;
     }
 
     if (showUncheckedOnly && itemCount === 0) {
@@ -1501,18 +1533,111 @@ function renderMobileVariantView() {
 /* =========================
    PC版バリアント表示 (現在ページのみ)
 ========================= */
+function renderUncheckedFlatVariantView() {
+  const items = [];
+
+  // variant名は表示しないが、並び順は「種類」を最優先にする。
+  // 例：A(normal), A(holo), B(normal), B(holo) ...
+  // こうすることで、同じ種類の別variantができるだけ横に並ぶ。
+  // variantの順番自体は、通常表示で上にあるvariantから維持する。
+  for (const { types } of getCurrentCollection()) {
+    for (const typeData of types) {
+      for (const variant of getVariants(typeData)) {
+        if (isItemChecked(typeData.type, variant)) continue;
+        items.push({ type: typeData.type, variant });
+      }
+    }
+  }
+
+  for (const { type } of getCurrentStandalone()) {
+    if (isItemChecked(type, null)) continue;
+    items.push({ type, variant: null });
+  }
+
+  if (items.length === 0) return;
+
+  const container = document.createElement("div");
+  container.className = "unchecked-flat-items";
+  container.style.setProperty("--unchecked-flat-column-count", Math.max(1, items.length));
+
+  for (const item of items) {
+    container.appendChild(createCollectionItem(item.type, item.variant));
+  }
+
+  gallery.appendChild(container);
+
+  // 1行固定ではなく、行数も含めて画像が最大になる列数を選ぶ。
+  // 幅だけでなく高さも評価するため、必要なら自然に改行される。
+  requestAnimationFrame(() => {
+    const captureRect = capture.getBoundingClientRect();
+    const headerRect = document.getElementById("header-area")?.getBoundingClientRect();
+    const controlsRect = document.getElementById("controls")?.getBoundingClientRect();
+    const paginationRect = paginationArea?.getBoundingClientRect();
+
+    const fixedHeight =
+      (headerRect?.height || 0) +
+      (controlsRect?.height || 0) +
+      (paginationRect?.height || 0) +
+      30;
+    const availableWidth = Math.max(1, captureRect.width - 16);
+    const availableHeight = Math.max(1, captureRect.height - fixedHeight);
+
+    let bestColumns = 1;
+    let bestSize = 0;
+
+    for (let columns = 1; columns <= items.length; columns++) {
+      const rows = Math.ceil(items.length / columns);
+      const widthSize = (availableWidth - (columns - 1) * 2) / columns;
+      const heightSize = (availableHeight - (rows - 1) * 2) / rows;
+      const size = Math.min(widthSize, heightSize);
+
+      // 画像サイズを最優先する。
+      // 同じ（または実質同じ）サイズなら、同じ種類が横に並びやすい
+      // 列数を選ぶ。列数をvariant数の倍数に近づけることで、
+      // A(normal), A(holo), B(normal), B(holo) ... のまとまりを保ちやすくする。
+      const variantCountByType = new Map();
+      for (const item of items) {
+        variantCountByType.set(item.type, (variantCountByType.get(item.type) || 0) + 1);
+      }
+      const maxVariantCount = Math.max(1, ...variantCountByType.values());
+      const remainder = columns % maxVariantCount;
+      const groupingScore = remainder === 0 ? 2 : (remainder === 1 || remainder === maxVariantCount - 1 ? 1 : 0);
+      const bestRemainder = bestColumns % maxVariantCount;
+      const bestGroupingScore = bestRemainder === 0 ? 2 : (bestRemainder === 1 || bestRemainder === maxVariantCount - 1 ? 1 : 0);
+
+      if (
+        size > bestSize + 0.01 ||
+        (Math.abs(size - bestSize) <= 0.01 && groupingScore > bestGroupingScore)
+      ) {
+        bestSize = size;
+        bestColumns = columns;
+      }
+    }
+
+    container.style.setProperty("--unchecked-flat-column-count", bestColumns);
+    scheduleAutoLayout();
+  });
+}
+
 function renderVariantView() {
+  // 未獲得のみモードではvariant名を表示せず、variantをまたいで
+  // 未獲得アイテムだけを1つのグリッドに詰めて表示する。
+  if (showUncheckedOnly) {
+    renderUncheckedFlatVariantView();
+    return;
+  }
+
   if (isMobileView()) {
     renderMobileVariantView();
     return;
   }
-  
+
   const typeOrder = getVariantViewTypeOrder();
   for (const { variant, itemsByType } of getAllVariantGroups()) {
     const row = createVariantViewRow(variant, typeOrder, itemsByType);
     if (row) gallery.appendChild(row);
   }
-  
+
   const standalones = getCurrentStandalone();
   if (standalones.length > 0) {
     const standaloneTypeOrder = standalones.map(({ type }) => type);
