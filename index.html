@@ -399,34 +399,6 @@ body.is-saving #pagination-area {
 }
 
 /* =========================
-   消費ダスト
-========================= */
-.value {
-  display: none;
-
-  position: absolute;
-  z-index: 3;
-
-  right: 4px;
-  bottom: 4px;
-
-  padding: 2px 4px;
-
-  border-radius: 4px;
-
-  background: rgba(255, 255, 255, 0.85);
-
-  font-family: "Impact", "Arial Black", sans-serif;
-  font-size: clamp(8px, 1vw, 14px);
-
-  pointer-events: none;
-}
-
-body.show-values .value {
-  display: block;
-}
-
-/* =========================
    ボタン
 ========================= */
 .controls {
@@ -820,16 +792,6 @@ body.is-saving .controls {
     margin: 0;
   }
 
-  .value {
-    top: 1px;
-    right: 1px;
-    bottom: auto;
-
-    padding: 1px;
-
-    font-size: 6px;
-  }
-
   .controls {
     position: fixed;
 
@@ -884,7 +846,6 @@ body.is-saving .controls {
       </div>
 
       <div class="controls">
-        <button id="btn-toggle-val" type="button">ダスト表示</button>
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
         <button id="btn-save" type="button">PNG画像保存</button>
       </div>
@@ -1061,16 +1022,6 @@ function getCurrentStandalone() {
 }
 
 /* =========================
-   消費ダスト
-========================= */
-const DUST_VALUES = {
-  rare: { normal: 100, other: 1500 },
-  epic: { normal: 1500, other: 1800 },
-  legendary: { normal: 1750, other: 2100 },
-  mythic: { normal: 2000, other: 2400 }
-};
-
-/* =========================
    自動サイズ調整
 ========================= */
 const AUTO_FIT = {
@@ -1078,18 +1029,6 @@ const AUTO_FIT = {
   maxItemSize: 240,
   safetyMargin: 2
 };
-
-/* =========================
-   対応表生成 (全ページを走査)
-========================= */
-const RARITY_MAP = {};
-PAGES.forEach(page => {
-  page.collection.forEach(row => {
-    row.types.forEach(typeData => {
-      RARITY_MAP[typeData.type] = row.rarity;
-    });
-  });
-});
 
 /* =========================
    HTML要素・状態
@@ -1101,7 +1040,6 @@ const collectionContent = document.getElementById("collection-content");
 const gallery = document.getElementById("gallery");
 const paginationArea = document.getElementById("pagination-area");
 
-const valueButton = document.getElementById("btn-toggle-val");
 const uncheckedButton = document.getElementById("btn-toggle-unchecked");
 const saveButton = document.getElementById("btn-save");
 const controls = document.querySelector(".controls");
@@ -1130,24 +1068,6 @@ function getStorageKey(type, variant) {
 function isItemChecked(type, variant) {
   const key = getStorageKey(type, variant);
   return localStorage.getItem(key) === "true";
-}
-
-/* =========================
-   消費ダスト取得
-========================= */
-function getValue(type, variant) {
-  if (variant === null) {
-    return DUST_VALUES.mythic.normal;
-  }
-  const rarity = RARITY_MAP[type] ?? "legendary";
-  const priceType = variant === "normal" ? "normal" : "other";
-  const value = DUST_VALUES[rarity]?.[priceType];
-  
-  if (value === undefined) {
-    console.warn(`消費ダスト未設定: rarity=${rarity}, type=${type}, variant=${variant}`);
-    return 0;
-  }
-  return value;
 }
 
 /* =========================
@@ -1190,7 +1110,6 @@ function createCollectionItem(type, variant = null) {
   const key = getStorageKey(type, variant);
   const item = document.createElement("div");
   const image = document.createElement("img");
-  const value = document.createElement("div");
   
   item.className = "item";
   item.dataset.storageKey = key;
@@ -1205,10 +1124,7 @@ function createCollectionItem(type, variant = null) {
     : `images/${variant}/${type}_${variant}.webp`;
   image.alt = variant === null ? type : `${type} ${variant}`;
   
-  value.className = "value";
-  value.textContent = getValue(type, variant);
-  
-  item.append(image, createCheckCanvas(), value);
+  item.append(image, createCheckCanvas());
   item.addEventListener("click", () => {
     const checked = !item.classList.contains("checked");
     item.classList.toggle("checked", checked);
@@ -1769,14 +1685,8 @@ function scheduleAutoLayout() {
 }
 
 /* =========================
-   消費ダスト表示・PNG保存処理
+   PNG保存処理
 ========================= */
-function toggleValues() {
-  const showing = document.body.classList.toggle("show-values");
-  valueButton.textContent = showing ? "ダスト非表示" : "ダスト表示";
-  scheduleAutoLayout();
-}
-
 function toggleUncheckedOnly() {
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
@@ -1939,7 +1849,6 @@ async function savePNG() {
 /* =========================
    イベント
 ========================= */
-valueButton.addEventListener("click", toggleValues);
 uncheckedButton.addEventListener("click", toggleUncheckedOnly);
 saveButton.addEventListener("click", savePNG);
 
