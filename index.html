@@ -822,13 +822,6 @@ body.is-saving .controls {
     border-radius: 5px;
     box-shadow: none;
   }
-  /* PNG保存時だけ、スマホのvariant名を1px上へ補正。
-     画面表示は変更せず、html2canvasで保存した画像だけを補正する。 */
-  body.is-saving .mobile-compact-variant-label,
-  body.is-saving .mobile-variant-special-label {
-    transform: translateY(-1px);
-  }
-
   .check-canvas {
     left: 10% !important;
     top: 40% !important;
@@ -1052,12 +1045,6 @@ const saveButton = document.getElementById("btn-save");
 const controls = document.querySelector(".controls");
 
 let layoutFrameId = null;
-
-// 通常モード時のヘッダー位置を保持する。
-// 未獲得のみモードではギャラリーの内容量が変わるため、
-// collection-content 全体の中央位置が変わってヘッダーも動いてしまう。
-// そのため、通常モードのヘッダー位置を基準に戻す。
-let normalHeaderTop = null;
 
 /* =========================
    共通処理
@@ -1646,25 +1633,7 @@ function renderView() {
   renderVariantView();
   updateCounter();
   updateVariantBulkCheckboxes();
-
-  // 一度自動サイズ調整を行ってから位置を補正する。
-  // requestAnimationFrame 2回分待たせることで、DOM再構築後の実寸を確定させる。
   scheduleAutoLayout();
-  if (showUncheckedOnly && normalHeaderTop !== null) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        applyAutoLayout();
-        restoreNormalHeaderPosition();
-      });
-    });
-  } else {
-    collectionContent.style.transform = "";
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!showUncheckedOnly) rememberNormalHeaderPosition();
-      });
-    });
-  }
 }
 
 /* =========================
@@ -1718,46 +1687,9 @@ function scheduleAutoLayout() {
 /* =========================
    PNG保存処理
 ========================= */
-function rememberNormalHeaderPosition() {
-  if (showUncheckedOnly) return;
-  const header = document.getElementById("header-area");
-  if (!header) return;
-  const captureRect = capture.getBoundingClientRect();
-  const headerRect = header.getBoundingClientRect();
-  normalHeaderTop = headerRect.top - captureRect.top;
-}
-
-function restoreNormalHeaderPosition() {
-  if (!showUncheckedOnly || normalHeaderTop === null) {
-    collectionContent.style.transform = "";
-    return;
-  }
-
-  const header = document.getElementById("header-area");
-  if (!header) return;
-  const captureRect = capture.getBoundingClientRect();
-  const headerRect = header.getBoundingClientRect();
-  const currentTop = headerRect.top - captureRect.top;
-  const delta = normalHeaderTop - currentTop;
-
-  // 元の位置との差だけを動かすので、未獲得のみモードの
-  // 自動サイズ調整そのものはそのまま維持する。
-  collectionContent.style.transform = `translateY(${delta}px)`;
-}
-
 function toggleUncheckedOnly() {
-  if (!showUncheckedOnly) {
-    // 未獲得のみへ入る直前の「通常モード」の位置を保存。
-    rememberNormalHeaderPosition();
-  }
-
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
-
-  if (!showUncheckedOnly) {
-    collectionContent.style.transform = "";
-  }
-
   renderView();
 }
 
