@@ -1295,7 +1295,7 @@ function updateVariantBulkCheckboxes() {
     const items = getRenderedVariantItems(variant);
     const checkedCount = items.filter(item => item.classList.contains("checked")).length;
     checkbox.checked = items.length > 0 && checkedCount === items.length;
-    checkbox.indeterminate = checkedCount > 0 && checkedCount < items.length;
+    checkbox.indeterminate = false//checkedCount > 0 && checkedCount < items.length;
     checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
   }
 }
