@@ -1658,9 +1658,28 @@ function contentFits() {
   return (rect.width <= available.width && rect.height <= available.height);
 }
 
+// function findLargestItemSize() {
+//   let low = AUTO_FIT.minItemSize;
+//   let high = AUTO_FIT.maxItemSize;
+//   for (let i = 0; i < 14; i++) {
+//     const middle = (low + high) / 2;
+//     root.style.setProperty("--item-size", `${middle}px`);
+//     if (contentFits()) {
+//       low = middle;
+//     } else {
+//       high = middle;
+//     }
+//   }
+//   return Math.max(AUTO_FIT.minItemSize, Math.floor(low * 10) / 10);
+// }
 function findLargestItemSize() {
-  let low = AUTO_FIT.minItemSize;
-  let high = AUTO_FIT.maxItemSize;
+  // スマホは横幅(約370px)に10列収めるため12pxまで縮小を許可
+  // PCは米粒化を防ぐため34px未満にならないように設定
+  const minSize = isMobileView() ? 12 : 34;
+  const maxSize = AUTO_FIT.maxItemSize;
+
+  let low = minSize;
+  let high = maxSize;
   for (let i = 0; i < 14; i++) {
     const middle = (low + high) / 2;
     root.style.setProperty("--item-size", `${middle}px`);
@@ -1670,7 +1689,7 @@ function findLargestItemSize() {
       high = middle;
     }
   }
-  return Math.max(AUTO_FIT.minItemSize, Math.floor(low * 10) / 10);
+  return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
 function applyAutoLayout() {
