@@ -526,6 +526,11 @@ body.is-saving .controls {
    PC版
 ========================= */
 @media (min-width: 769px) {
+  /* ★ 追加：PC版でも外枠が画像サイズに合わせて伸縮するようにする */
+  #collection-content {
+    width: max-content;
+    max-width: 100%;
+  }
   #capture {
     position:relative;
     padding-right: 6px;
@@ -1652,9 +1657,15 @@ function getAvailableSize() {
   };
 }
 
+// function contentFits() {
+//   const available = getAvailableSize();
+//   const rect = collectionContent.getBoundingClientRect();
+//   return (rect.width <= available.width && rect.height <= available.height);
+// }
 function contentFits() {
   const available = getAvailableSize();
-  const rect = collectionContent.getBoundingClientRect();
+  // 外枠(100%固定)ではなく、実際に画像が並んでいる#galleryの実サイズを測定する
+  const rect = gallery.getBoundingClientRect();
   return (rect.width <= available.width && rect.height <= available.height);
 }
 
