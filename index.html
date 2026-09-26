@@ -66,8 +66,9 @@ body {
   overflow: hidden;
 
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* 上揃えにしてヘッダー位置を最上部に固定 */
 
   /* デフォルト（ページ2）の背景グラデーション */
   background-image: linear-gradient(
@@ -89,13 +90,13 @@ body.page-0 #capture {
 }
 
 #collection-content {
-  flex: 0 0 auto;
+  width: 100%;
 
   display: flex;
   flex-direction: column;
 
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* =========================
@@ -171,6 +172,8 @@ body.is-saving #pagination-area {
    ギャラリー
 ========================= */
 #gallery {
+  width: 100%;
+
   display: flex;
   flex-direction: column;
 
@@ -178,6 +181,7 @@ body.is-saving #pagination-area {
   justify-content: center;
 
   gap: var(--gap-block);
+  min-height: 0;
 }
 
 /* =========================
@@ -586,7 +590,7 @@ body.is-saving .controls {
     overflow: hidden;
 
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   body.is-saving #capture {
@@ -597,7 +601,7 @@ body.is-saving .controls {
     width: auto;
     min-width: 0;
 
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   #header-area {
@@ -1138,7 +1142,6 @@ function createCollectionItem(type, variant = null) {
     localStorage.setItem(key, String(checked));
     
     if (showUncheckedOnly && checked) {
-      // 未獲得のみモードでチェックをつけた場合、再描画して非表示化する
       renderView();
     } else {
       updateCounter();
@@ -1567,7 +1570,6 @@ function renderPagination() {
       if (currentPageIndex !== index) {
         currentPageIndex = index;
 
-        // C7S4(index 0) 以外のページへ移動した際、未獲得のみモードを解除して通常モードに戻す
         if (currentPageIndex !== 0 && showUncheckedOnly) {
           showUncheckedOnly = false;
           uncheckedButton.classList.remove("active");
@@ -1625,9 +1627,9 @@ function renderView() {
   document.body.classList.remove("page-0", "page-1");
   document.body.classList.add(`page-${currentPageIndex}`);
 
-  // C7S4 ページ (currentPageIndex === 0) でのみ「未獲得のみ」ボタンを表示
+  // C7S4 (index 0) でのみボタンを表示（非表示時も領域を維持）
   if (uncheckedButton) {
-    uncheckedButton.style.display = (currentPageIndex === 0) ? "" : "none";
+    uncheckedButton.style.visibility = (currentPageIndex === 0) ? "visible" : "hidden";
   }
 
   renderVariantView();
@@ -1643,6 +1645,7 @@ function getAvailableSize() {
   const style = getComputedStyle(capture);
   const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
   const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+
   return {
     width: capture.clientWidth - paddingX - AUTO_FIT.safetyMargin,
     height: capture.clientHeight - paddingY - AUTO_FIT.safetyMargin
