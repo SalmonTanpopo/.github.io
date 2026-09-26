@@ -1586,6 +1586,16 @@ function renderPagination() {
     btn.addEventListener("click", () => {
       if (currentPageIndex !== index) {
         currentPageIndex = index;
+
+        // 未獲得のみモードはC7S4（1ページ目）のみ使用可能。
+        // C7S3へ移動したら通常モードへ戻す。
+        if (currentPageIndex !== 0 && showUncheckedOnly) {
+          showUncheckedOnly = false;
+          uncheckedButton.classList.remove("active");
+          uncheckedHeaderAnchorTop = null;
+          collectionContent.style.transform = "";
+        }
+
         renderPagination();
         renderView();
       }
@@ -1632,6 +1642,9 @@ function updateCounter() {
    表示全体の描画
 ========================= */
 function renderView() {
+  // 未獲得のみボタンはC7S4（1ページ目）でのみ表示する。
+  uncheckedButton.style.display = currentPageIndex === 0 ? "" : "none";
+
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
   
