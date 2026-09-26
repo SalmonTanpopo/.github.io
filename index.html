@@ -1733,27 +1733,22 @@ function applyAutoLayout() {
   // 画像数が 9→8 のように変わって高さが変化しても、TOTAL の位置を
   // 「モード切替前の位置」に固定するため、transform で後から戻す方式は使わない。
   if (isMobileView() && showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    // 未獲得モードへ入った瞬間のTOTAL位置を #capture 基準で固定。
+    // 現在の要素位置を再測定して補正する処理は行わない。
     const captureRect = capture.getBoundingClientRect();
-    const header = document.getElementById("header-area");
+    const fixedTop = uncheckedHeaderAnchorTop - captureRect.top;
 
-    if (header) {
-      // header は collectionContent の先頭要素なので、通常はこの値が
-      // collectionContent の上端位置そのものになる。念のため差分を
-      // 記録しておき、CSS変更があってもTOTAL位置を維持する。
-      const contentRect = collectionContent.getBoundingClientRect();
-      const headerOffset = header.getBoundingClientRect().top - contentRect.top;
-      const fixedTop = uncheckedHeaderAnchorTop - captureRect.top - headerOffset;
+    collectionContent.style.position = "absolute";
+    collectionContent.style.top = `${fixedTop}px`;
+    collectionContent.style.left = "50%";
+    collectionContent.style.transform = "translateX(-50%)";
 
-      collectionContent.style.position = "absolute";
-      collectionContent.style.top = `${fixedTop}px`;
-      collectionContent.style.left = "50%";
-      collectionContent.style.transform = "translateX(-50%)";
+    if (counter) counter.style.transform = "";
+    if (pagination) pagination.style.transform = "";
+    if (gallery) gallery.style.transform = "";
+  }
 
-      if (counter) counter.style.transform = "";
-      if (pagination) pagination.style.transform = "";
-      if (gallery) gallery.style.transform = "";
-    }
-  } else if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+ else if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
     // PC版は従来どおり collectionContent 全体を上下移動させる。
     collectionContent.style.position = "";
     collectionContent.style.top = "";
