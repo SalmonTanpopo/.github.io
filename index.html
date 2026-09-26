@@ -852,11 +852,6 @@ body.is-saving .mobile-variant-special-label {
         /
         <span id="total-count">0</span>
       </div>
-
-      <div class="controls">
-        <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
-        <button id="btn-save" type="button">PNG画像保存</button>
-      </div>
     </div>
 
     <!-- ページ切り替え用 -->
@@ -864,6 +859,12 @@ body.is-saving .mobile-variant-special-label {
 
     <div id="gallery"></div>
 
+  </div>
+
+  <!-- 操作ボタン：collection-content の transform の影響を受けないよう外側に配置 -->
+  <div class="controls">
+    <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
+    <button id="btn-save" type="button">PNG画像保存</button>
   </div>
 </div>
 
