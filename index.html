@@ -66,9 +66,8 @@ body {
   overflow: hidden;
 
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
 
   /* デフォルト（ページ2）の背景グラデーション */
   background-image: linear-gradient(
@@ -90,14 +89,13 @@ body.page-0 #capture {
 }
 
 #collection-content {
-  width: 100%;
-  height: 100%;
+  flex: 0 0 auto;
 
   display: flex;
   flex-direction: column;
 
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 /* =========================
@@ -173,9 +171,6 @@ body.is-saving #pagination-area {
    ギャラリー
 ========================= */
 #gallery {
-  flex: 1;
-  width: 100%;
-
   display: flex;
   flex-direction: column;
 
@@ -183,7 +178,6 @@ body.is-saving #pagination-area {
   justify-content: center;
 
   gap: var(--gap-block);
-  min-height: 0;
 }
 
 /* =========================
@@ -1631,9 +1625,9 @@ function renderView() {
   document.body.classList.remove("page-0", "page-1");
   document.body.classList.add(`page-${currentPageIndex}`);
 
-  // C7S4 ページ (currentPageIndex === 0) でのみ「未獲得のみ」ボタンを表示（非表示時も領域を維持して位置ズレを防ぐ）
+  // C7S4 ページ (currentPageIndex === 0) でのみ「未獲得のみ」ボタンを表示
   if (uncheckedButton) {
-    uncheckedButton.style.visibility = (currentPageIndex === 0) ? "visible" : "hidden";
+    uncheckedButton.style.display = (currentPageIndex === 0) ? "" : "none";
   }
 
   renderVariantView();
@@ -1649,14 +1643,9 @@ function getAvailableSize() {
   const style = getComputedStyle(capture);
   const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
   const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-
-  // 固定表示されたヘッダーとページボタンの要素高さを差し引いて計算
-  const headerH = document.getElementById("header-area")?.offsetHeight || 0;
-  const paginationH = document.getElementById("pagination-area")?.offsetHeight || 0;
-
   return {
     width: capture.clientWidth - paddingX - AUTO_FIT.safetyMargin,
-    height: capture.clientHeight - paddingY - headerH - paginationH - AUTO_FIT.safetyMargin
+    height: capture.clientHeight - paddingY - AUTO_FIT.safetyMargin
   };
 }
 
