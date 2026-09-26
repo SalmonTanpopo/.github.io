@@ -1686,7 +1686,7 @@ function contentFits() {
 function findLargestItemSize() {
   // スマホは横幅(約370px)に10列収めるため12pxまで縮小を許可
   // PCは米粒化を防ぐため100px未満にならないように設定
-  const minSize = isMobileView() ? 12 : 60;
+  const minSize = isMobileView() ? 12 : 50;
   const maxSize = AUTO_FIT.maxItemSize;
 
   let low = minSize;
