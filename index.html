@@ -1730,6 +1730,48 @@ async function waitForImages(target) {
   }));
 }
 
+// function cropControlSpace(sourceCanvas) {
+//   const contentRect = collectionContent.getBoundingClientRect();
+//   const captureRect = capture.getBoundingClientRect();
+
+//   const canvasScaleX = sourceCanvas.width / captureRect.width;
+//   const canvasScaleY = sourceCanvas.height / captureRect.height;
+
+//   const left = Math.max(
+//     0,
+//     Math.round((contentRect.left - captureRect.left) * canvasScaleX)
+//   );
+//   const top = Math.max(
+//     0,
+//     Math.round((contentRect.top - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
+//   );
+//   const right = Math.min(
+//     sourceCanvas.width,
+//     Math.round((contentRect.right - captureRect.left) * canvasScaleX)
+//   );
+//   const bottom = Math.min(
+//     sourceCanvas.height,
+//     Math.round((contentRect.bottom - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
+//   );
+
+//   const croppedWidth = Math.max(1, right - left);
+//   const croppedHeight = Math.max(1, bottom - top);
+
+//   const croppedCanvas = document.createElement("canvas");
+//   croppedCanvas.width = croppedWidth;
+//   croppedCanvas.height = croppedHeight;
+
+//   const ctx = croppedCanvas.getContext("2d");
+//   if (!ctx) return sourceCanvas;
+
+//   ctx.drawImage(
+//     sourceCanvas,
+//     left, top, croppedWidth, croppedHeight,
+//     0, 0, croppedWidth, croppedHeight
+//   );
+
+//   return croppedCanvas;
+// }
 function cropControlSpace(sourceCanvas) {
   const contentRect = collectionContent.getBoundingClientRect();
   const captureRect = capture.getBoundingClientRect();
@@ -1737,21 +1779,28 @@ function cropControlSpace(sourceCanvas) {
   const canvasScaleX = sourceCanvas.width / captureRect.width;
   const canvasScaleY = sourceCanvas.height / captureRect.height;
 
+  // 上端：TOTALヘッダーの位置から正確に開始（ズレを削除）
   const left = Math.max(
     0,
     Math.round((contentRect.left - captureRect.left) * canvasScaleX)
   );
   const top = Math.max(
     0,
-    Math.round((contentRect.top - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
+    Math.round((contentRect.top - captureRect.top) * canvasScaleY)
   );
+
   const right = Math.min(
     sourceCanvas.width,
     Math.round((contentRect.right - captureRect.left) * canvasScaleX)
   );
+
+  // 下端：ギャラリーの一番下の要素（実コンテンツ）の下端を取得してピッタリ切り抜く
+  const lastElement = gallery.lastElementChild;
+  const bottomBoundary = lastElement ? lastElement.getBoundingClientRect().bottom : contentRect.bottom;
+
   const bottom = Math.min(
     sourceCanvas.height,
-    Math.round((contentRect.bottom - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
+    Math.round((bottomBoundary - captureRect.top) * canvasScaleY)
   );
 
   const croppedWidth = Math.max(1, right - left);
