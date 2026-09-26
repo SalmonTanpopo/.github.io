@@ -1746,25 +1746,29 @@ function applyAutoLayout() {
     if (counter) counter.style.transform = "";
     if (pagination) pagination.style.transform = "";
     if (gallery) gallery.style.transform = "";
-  }
-
- else if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
-    // PC版は従来どおり collectionContent 全体を上下移動させる。
+  } else if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    // PC版も collectionContent 全体を動かさない。
+    // 画像数や画像サイズが変わるたびに親全体を transform すると、
+    // flex中央配置との組み合わせで TOTAL まで大きく動いてしまう。
+    // TOTAL だけをモード切替前の位置へ戻す。
     collectionContent.style.position = "";
     collectionContent.style.top = "";
     collectionContent.style.left = "";
+    collectionContent.style.transform = "";
 
     const header = document.getElementById("header-area");
     if (header) {
       const currentTop = header.getBoundingClientRect().top;
       const delta = uncheckedHeaderAnchorTop - currentTop;
-      collectionContent.style.transform = `translateY(${delta}px)`;
+      header.style.transform = `translateY(${delta}px)`;
     }
 
     if (counter) counter.style.transform = "";
     if (pagination) pagination.style.transform = "";
     if (gallery) gallery.style.transform = "";
   } else if (!showUncheckedOnly) {
+    const header = document.getElementById("header-area");
+    if (header) header.style.transform = "";
     collectionContent.style.position = "";
     collectionContent.style.top = "";
     collectionContent.style.left = "";
@@ -1798,6 +1802,8 @@ function toggleUncheckedOnly() {
     uncheckedHeaderAnchorTop = header?.getBoundingClientRect().top ?? null;
   } else {
     uncheckedHeaderAnchorTop = null;
+    const header = document.getElementById("header-area");
+    if (header) header.style.transform = "";
     collectionContent.style.position = "";
     collectionContent.style.top = "";
     collectionContent.style.left = "";
