@@ -1295,7 +1295,7 @@ function updateVariantBulkCheckboxes() {
     const items = getRenderedVariantItems(variant);
     const checkedCount = items.filter(item => item.classList.contains("checked")).length;
     checkbox.checked = items.length > 0 && checkedCount === items.length;
-    checkbox.indeterminate = false//checkedCount > 0 && checkedCount < items.length;
+    checkbox.indeterminate = false;
     checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
   }
 }
@@ -1709,20 +1709,24 @@ function applyAutoLayout() {
       if (isMobileView()) {
         // スマホでは .controls が position: fixed のため、
         // 親要素を transform するとボタンまで動いてしまう。
-        // TOTAL とページボタンだけを個別に元の位置へ戻す。
+        // TOTAL・ページボタン・ギャラリーを同じ量だけ戻す。
+        // .controls は親を動かさないため固定位置のまま。
         collectionContent.style.transform = "";
         if (counter) counter.style.transform = `translateY(${delta}px)`;
         if (pagination) pagination.style.transform = `translateY(${delta}px)`;
+        if (gallery) gallery.style.transform = `translateY(${delta}px)`;
       } else {
         collectionContent.style.transform = `translateY(${delta}px)`;
         if (counter) counter.style.transform = "";
         if (pagination) pagination.style.transform = "";
+        if (gallery) gallery.style.transform = "";
       }
     }
   } else if (!showUncheckedOnly) {
     collectionContent.style.transform = "";
     if (counter) counter.style.transform = "";
     if (pagination) pagination.style.transform = "";
+    if (gallery) gallery.style.transform = "";
   }
 }
 
