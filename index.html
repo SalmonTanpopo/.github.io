@@ -1601,6 +1601,9 @@ function renderPagination() {
           showUncheckedOnly = false;
           uncheckedButton.classList.remove("active");
           uncheckedHeaderAnchorTop = null;
+          collectionContent.style.position = "";
+          collectionContent.style.top = "";
+          collectionContent.style.left = "";
           collectionContent.style.transform = "";
         }
 
@@ -1722,43 +1725,63 @@ function findLargestItemSize() {
 }
 
 function applyAutoLayout() {
-  root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
-
-  // 未獲得のみモードではギャラリーの高さが変わるため、
-  // flex中央配置によってヘッダー・ページボタンまで上下に動いてしまう。
-  // モード切替前のヘッダー位置だけを基準にして、全体を同じ位置へ戻す。
   const counter = document.getElementById("counter");
   const pagination = document.getElementById("pagination-area");
 
-  if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+  // スマホの未獲得のみモードでは、#capture の flex 中央配置から
+  // #collection-content を外す。
+  // 画像数が 9→8 のように変わって高さが変化しても、TOTAL の位置を
+  // 「モード切替前の位置」に固定するため、transform で後から戻す方式は使わない。
+  if (isMobileView() && showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    const captureRect = capture.getBoundingClientRect();
+    const header = document.getElementById("header-area");
+
+    if (header) {
+      // header は collectionContent の先頭要素なので、通常はこの値が
+      // collectionContent の上端位置そのものになる。念のため差分を
+      // 記録しておき、CSS変更があってもTOTAL位置を維持する。
+      const contentRect = collectionContent.getBoundingClientRect();
+      const headerOffset = header.getBoundingClientRect().top - contentRect.top;
+      const fixedTop = uncheckedHeaderAnchorTop - captureRect.top - headerOffset;
+
+      collectionContent.style.position = "absolute";
+      collectionContent.style.top = `${fixedTop}px`;
+      collectionContent.style.left = "50%";
+      collectionContent.style.transform = "translateX(-50%)";
+
+      if (counter) counter.style.transform = "";
+      if (pagination) pagination.style.transform = "";
+      if (gallery) gallery.style.transform = "";
+    }
+  } else if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    // PC版は従来どおり collectionContent 全体を上下移動させる。
+    collectionContent.style.position = "";
+    collectionContent.style.top = "";
+    collectionContent.style.left = "";
+
     const header = document.getElementById("header-area");
     if (header) {
       const currentTop = header.getBoundingClientRect().top;
       const delta = uncheckedHeaderAnchorTop - currentTop;
-
-      if (isMobileView()) {
-        // スマホでは .controls が position: fixed のため、
-        // 親要素を transform するとボタンまで動いてしまう。
-        // TOTAL・ページボタン・ギャラリーを同じ量だけ戻す。
-        // .controls は親を動かさないため固定位置のまま。
-        collectionContent.style.transform = "";
-        if (counter) counter.style.transform = `translateY(${delta}px)`;
-        if (pagination) pagination.style.transform = `translateY(${delta}px)`;
-        if (gallery) gallery.style.transform = `translateY(${delta}px)`;
-
-      } else {
-        collectionContent.style.transform = `translateY(${delta}px)`;
-        if (counter) counter.style.transform = "";
-        if (pagination) pagination.style.transform = "";
-        if (gallery) gallery.style.transform = "";
-      }
+      collectionContent.style.transform = `translateY(${delta}px)`;
     }
+
+    if (counter) counter.style.transform = "";
+    if (pagination) pagination.style.transform = "";
+    if (gallery) gallery.style.transform = "";
   } else if (!showUncheckedOnly) {
+    collectionContent.style.position = "";
+    collectionContent.style.top = "";
+    collectionContent.style.left = "";
     collectionContent.style.transform = "";
     if (counter) counter.style.transform = "";
     if (pagination) pagination.style.transform = "";
     if (gallery) gallery.style.transform = "";
   }
+
+  // 未獲得モードで固定位置を設定した後にサイズを決める。
+  // これにより、画像数が変わっても中央配置による位置変動をサイズ計算に混ぜない。
+  root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
 }
 
 function scheduleAutoLayout() {
@@ -1780,6 +1803,9 @@ function toggleUncheckedOnly() {
     uncheckedHeaderAnchorTop = header?.getBoundingClientRect().top ?? null;
   } else {
     uncheckedHeaderAnchorTop = null;
+    collectionContent.style.position = "";
+    collectionContent.style.top = "";
+    collectionContent.style.left = "";
     collectionContent.style.transform = "";
   }
 
