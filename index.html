@@ -531,17 +531,10 @@ body.is-saving .controls {
     position: static;
   }
 
-  /* PC版：操作ボタンは画面に完全固定。
-     collection-content / capture のレイアウト変更や transform の影響を受けない。 */
   .controls {
-    position: fixed !important;
-    top: 18px !important;
-    right: 20px !important;
-    bottom: auto !important;
-    left: auto !important;
-    margin: 0 !important;
-    transform: none !important;
-    z-index: 10000 !important;
+    top: 18px;
+    right: 20px;
+    transform: none;
   }
 
   .variant-view-row.pc-top-label-variant {
@@ -858,6 +851,11 @@ body.is-saving .mobile-variant-special-label {
         /
         <span id="total-count">0</span>
       </div>
+
+      <div class="controls">
+        <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
+        <button id="btn-save" type="button">PNG画像保存</button>
+      </div>
     </div>
 
     <!-- ページ切り替え用 -->
@@ -865,12 +863,6 @@ body.is-saving .mobile-variant-special-label {
 
     <div id="gallery"></div>
 
-  </div>
-
-  <!-- 操作ボタン：collection-content の transform の影響を受けないよう外側に配置 -->
-  <div class="controls">
-    <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
-    <button id="btn-save" type="button">PNG画像保存</button>
   </div>
 </div>
 
@@ -1027,7 +1019,6 @@ const PAGES = [
 
 let currentPageIndex = 0;
 let showUncheckedOnly = false; // 未獲得のみ表示フラグ
-let uncheckedHeaderAnchorTop = null;
 
 function getCurrentCollection() {
   return PAGES[currentPageIndex].collection;
@@ -1303,7 +1294,7 @@ function updateVariantBulkCheckboxes() {
     const items = getRenderedVariantItems(variant);
     const checkedCount = items.filter(item => item.classList.contains("checked")).length;
     checkbox.checked = items.length > 0 && checkedCount === items.length;
-    checkbox.indeterminate = false;
+    checkbox.indeterminate = false//checkedCount > 0 && checkedCount < items.length;
     checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
   }
 }
@@ -1594,19 +1585,6 @@ function renderPagination() {
     btn.addEventListener("click", () => {
       if (currentPageIndex !== index) {
         currentPageIndex = index;
-
-        // 未獲得のみモードはC7S4（1ページ目）のみ使用可能。
-        // C7S3へ移動したら通常モードへ戻す。
-        if (currentPageIndex !== 0 && showUncheckedOnly) {
-          showUncheckedOnly = false;
-          uncheckedButton.classList.remove("active");
-          uncheckedHeaderAnchorTop = null;
-          collectionContent.style.position = "";
-          collectionContent.style.top = "";
-          collectionContent.style.left = "";
-          collectionContent.style.transform = "";
-        }
-
         renderPagination();
         renderView();
       }
@@ -1653,9 +1631,6 @@ function updateCounter() {
    表示全体の描画
 ========================= */
 function renderView() {
-  // 未獲得のみボタンはC7S4（1ページ目）でのみ表示する。
-  uncheckedButton.style.display = currentPageIndex === 0 ? "" : "none";
-
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
   
@@ -1684,12 +1659,7 @@ function getAvailableSize() {
 function contentFits() {
   const available = getAvailableSize();
   const rect = collectionContent.getBoundingClientRect();
-
-  if (rect.width > available.width || rect.height > available.height) {
-    return false;
-  }
-
-  return true;
+  return (rect.width <= available.width && rect.height <= available.height);
 }
 
 function findLargestItemSize() {
@@ -1708,26 +1678,6 @@ function findLargestItemSize() {
 }
 
 function applyAutoLayout() {
-  // 通常モードでは元のflex中央配置をそのまま使う。
-  // 未獲得モードのときだけ collection-content を #capture 内の固定位置にする。
-  // これにより、未獲得数の増減でギャラリーの高さが変わっても
-  // TOTAL / C7S4 / C7S3 は動かない。
-  if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
-    const captureRect = capture.getBoundingClientRect();
-    const fixedTop = uncheckedHeaderAnchorTop - captureRect.top;
-
-    collectionContent.style.position = "absolute";
-    collectionContent.style.top = `${fixedTop}px`;
-    collectionContent.style.left = "50%";
-    collectionContent.style.transform = "translateX(-50%)";
-  } else {
-    // 未獲得モードを解除したら、元のCSSによるflex中央配置へ完全に戻す。
-    collectionContent.style.position = "";
-    collectionContent.style.top = "";
-    collectionContent.style.left = "";
-    collectionContent.style.transform = "";
-  }
-
   root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
 }
 
@@ -1745,19 +1695,6 @@ function scheduleAutoLayout() {
    PNG保存処理
 ========================= */
 function toggleUncheckedOnly() {
-  if (!showUncheckedOnly) {
-    // 通常 → 未獲得のみ：切り替え直前のTOTAL位置だけを記録。
-    const header = document.getElementById("header-area");
-    uncheckedHeaderAnchorTop = header?.getBoundingClientRect().top ?? null;
-  } else {
-    // 未獲得のみ → 通常：固定を完全解除して元のflex中央配置へ戻す。
-    uncheckedHeaderAnchorTop = null;
-    collectionContent.style.position = "";
-    collectionContent.style.top = "";
-    collectionContent.style.left = "";
-    collectionContent.style.transform = "";
-  }
-
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
   renderView();
