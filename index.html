@@ -1746,23 +1746,6 @@ function applyAutoLayout() {
         if (pagination) pagination.style.transform = `translateY(${delta}px)`;
         if (gallery) gallery.style.transform = `translateY(${delta}px)`;
 
-        // 画像数が 9→8 のように変わると、1行あたりの列数が変わって
-        // item-size が一気に大きくなり、中央配置を戻した後に下端だけ
-        // わずかにはみ出すことがある。
-        // その場合だけ、下端に収まるまで画像サイズを少し縮める。
-        const captureRect = capture.getBoundingClientRect();
-        const galleryRect = gallery.getBoundingClientRect();
-        const bottomMargin = 2;
-        if (galleryRect.bottom > captureRect.bottom - bottomMargin) {
-          const overflow = galleryRect.bottom - (captureRect.bottom - bottomMargin);
-          const currentSize = parseFloat(getComputedStyle(root).getPropertyValue("--item-size"));
-          if (Number.isFinite(currentSize) && currentSize > AUTO_FIT.minItemSize) {
-            root.style.setProperty(
-              "--item-size",
-              `${Math.max(AUTO_FIT.minItemSize, currentSize - overflow)}px`
-            );
-          }
-        }
       } else {
         collectionContent.style.transform = `translateY(${delta}px)`;
         if (counter) counter.style.transform = "";
