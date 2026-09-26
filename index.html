@@ -1019,6 +1019,7 @@ const PAGES = [
 
 let currentPageIndex = 0;
 let showUncheckedOnly = false; // 未獲得のみ表示フラグ
+let uncheckedHeaderAnchorTop = null;
 
 function getCurrentCollection() {
   return PAGES[currentPageIndex].collection;
@@ -1679,6 +1680,37 @@ function findLargestItemSize() {
 
 function applyAutoLayout() {
   root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
+
+  // 未獲得のみモードではギャラリーの高さが変わるため、
+  // flex中央配置によってヘッダー・ページボタンまで上下に動いてしまう。
+  // モード切替前のヘッダー位置だけを基準にして、全体を同じ位置へ戻す。
+  const counter = document.getElementById("counter");
+  const pagination = document.getElementById("pagination-area");
+
+  if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    const header = document.getElementById("header-area");
+    if (header) {
+      const currentTop = header.getBoundingClientRect().top;
+      const delta = uncheckedHeaderAnchorTop - currentTop;
+
+      if (isMobileView()) {
+        // スマホでは .controls が position: fixed のため、
+        // 親要素を transform するとボタンまで動いてしまう。
+        // TOTAL とページボタンだけを個別に元の位置へ戻す。
+        collectionContent.style.transform = "";
+        if (counter) counter.style.transform = `translateY(${delta}px)`;
+        if (pagination) pagination.style.transform = `translateY(${delta}px)`;
+      } else {
+        collectionContent.style.transform = `translateY(${delta}px)`;
+        if (counter) counter.style.transform = "";
+        if (pagination) pagination.style.transform = "";
+      }
+    }
+  } else if (!showUncheckedOnly) {
+    collectionContent.style.transform = "";
+    if (counter) counter.style.transform = "";
+    if (pagination) pagination.style.transform = "";
+  }
 }
 
 function scheduleAutoLayout() {
@@ -1695,6 +1727,14 @@ function scheduleAutoLayout() {
    PNG保存処理
 ========================= */
 function toggleUncheckedOnly() {
+  if (!showUncheckedOnly) {
+    const header = document.getElementById("header-area");
+    uncheckedHeaderAnchorTop = header?.getBoundingClientRect().top ?? null;
+  } else {
+    uncheckedHeaderAnchorTop = null;
+    collectionContent.style.transform = "";
+  }
+
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
   renderView();
