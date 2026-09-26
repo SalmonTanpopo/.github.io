@@ -1747,21 +1747,17 @@ function applyAutoLayout() {
     if (pagination) pagination.style.transform = "";
     if (gallery) gallery.style.transform = "";
   } else if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
-    // PC版も collectionContent 全体を動かさない。
-    // 画像数や画像サイズが変わるたびに親全体を transform すると、
-    // flex中央配置との組み合わせで TOTAL まで大きく動いてしまう。
-    // TOTAL だけをモード切替前の位置へ戻す。
-    collectionContent.style.position = "";
-    collectionContent.style.top = "";
-    collectionContent.style.left = "";
-    collectionContent.style.transform = "";
+    // PC版もスマホ版と同じく、未獲得モード中は collectionContent を
+    // #capture の中央配置から外す。
+    // これにより画像数・行数・画像サイズが変化しても、
+    // TOTAL / C7S4 / C7S3 を含む上部全体が一緒に上下しない。
+    const captureRect = capture.getBoundingClientRect();
+    const fixedTop = uncheckedHeaderAnchorTop - captureRect.top;
 
-    const header = document.getElementById("header-area");
-    if (header) {
-      const currentTop = header.getBoundingClientRect().top;
-      const delta = uncheckedHeaderAnchorTop - currentTop;
-      header.style.transform = `translateY(${delta}px)`;
-    }
+    collectionContent.style.position = "absolute";
+    collectionContent.style.top = `${fixedTop}px`;
+    collectionContent.style.left = "50%";
+    collectionContent.style.transform = "translateX(-50%)";
 
     if (counter) counter.style.transform = "";
     if (pagination) pagination.style.transform = "";
