@@ -531,10 +531,17 @@ body.is-saving .controls {
     position: static;
   }
 
+  /* PC版：操作ボタンは画面に完全固定。
+     collection-content / capture のレイアウト変更や transform の影響を受けない。 */
   .controls {
-    top: 18px;
-    right: 20px;
-    transform: none;
+    position: fixed !important;
+    top: 18px !important;
+    right: 20px !important;
+    bottom: auto !important;
+    left: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+    z-index: 10000 !important;
   }
 
   .variant-view-row.pc-top-label-variant {
@@ -851,11 +858,6 @@ body.is-saving .mobile-variant-special-label {
         /
         <span id="total-count">0</span>
       </div>
-
-      <div class="controls">
-        <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
-        <button id="btn-save" type="button">PNG画像保存</button>
-      </div>
     </div>
 
     <!-- ページ切り替え用 -->
@@ -863,6 +865,12 @@ body.is-saving .mobile-variant-special-label {
 
     <div id="gallery"></div>
 
+  </div>
+
+  <!-- 操作ボタン：collection-content の transform の影響を受けないよう外側に配置 -->
+  <div class="controls">
+    <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
+    <button id="btn-save" type="button">PNG画像保存</button>
   </div>
 </div>
 
@@ -1019,6 +1027,7 @@ const PAGES = [
 
 let currentPageIndex = 0;
 let showUncheckedOnly = false; // 未獲得のみ表示フラグ
+let uncheckedHeaderAnchorTop = null;
 
 function getCurrentCollection() {
   return PAGES[currentPageIndex].collection;
@@ -1294,7 +1303,7 @@ function updateVariantBulkCheckboxes() {
     const items = getRenderedVariantItems(variant);
     const checkedCount = items.filter(item => item.classList.contains("checked")).length;
     checkbox.checked = items.length > 0 && checkedCount === items.length;
-    checkbox.indeterminate = false//checkedCount > 0 && checkedCount < items.length;
+    checkbox.indeterminate = false;
     checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
   }
 }
@@ -1585,6 +1594,16 @@ function renderPagination() {
     btn.addEventListener("click", () => {
       if (currentPageIndex !== index) {
         currentPageIndex = index;
+
+        // 未獲得のみモードはC7S4（1ページ目）のみ使用可能。
+        // C7S3へ移動したら通常モードへ戻す。
+        if (currentPageIndex !== 0 && showUncheckedOnly) {
+          showUncheckedOnly = false;
+          uncheckedButton.classList.remove("active");
+          uncheckedHeaderAnchorTop = null;
+          collectionContent.style.transform = "";
+        }
+
         renderPagination();
         renderView();
       }
@@ -1631,6 +1650,9 @@ function updateCounter() {
    表示全体の描画
 ========================= */
 function renderView() {
+  // 未獲得のみボタンはC7S4（1ページ目）でのみ表示する。
+  uncheckedButton.style.display = currentPageIndex === 0 ? "" : "none";
+
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
   
@@ -1659,7 +1681,29 @@ function getAvailableSize() {
 function contentFits() {
   const available = getAvailableSize();
   const rect = collectionContent.getBoundingClientRect();
-  return (rect.width <= available.width && rect.height <= available.height);
+
+  if (rect.width > available.width || rect.height > available.height) {
+    return false;
+  }
+
+  // スマホの未獲得のみモードでは、TOTAL・ページボタンの位置を
+  // 通常モードと同じ位置に固定している。その分だけギャラリーが
+  // 下へ押し出される場合があるため、その状態まで含めて判定する。
+  if (isMobileView() && showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    const header = document.getElementById("header-area");
+    if (header && gallery) {
+      const delta = uncheckedHeaderAnchorTop - header.getBoundingClientRect().top;
+      const galleryBottom = gallery.getBoundingClientRect().bottom + delta;
+      const captureBottom = capture.getBoundingClientRect().bottom -
+        parseFloat(getComputedStyle(capture).paddingBottom || "0");
+
+      if (galleryBottom > captureBottom) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function findLargestItemSize() {
@@ -1679,6 +1723,59 @@ function findLargestItemSize() {
 
 function applyAutoLayout() {
   root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
+
+  // 未獲得のみモードではギャラリーの高さが変わるため、
+  // flex中央配置によってヘッダー・ページボタンまで上下に動いてしまう。
+  // モード切替前のヘッダー位置だけを基準にして、全体を同じ位置へ戻す。
+  const counter = document.getElementById("counter");
+  const pagination = document.getElementById("pagination-area");
+
+  if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    const header = document.getElementById("header-area");
+    if (header) {
+      const currentTop = header.getBoundingClientRect().top;
+      const delta = uncheckedHeaderAnchorTop - currentTop;
+
+      if (isMobileView()) {
+        // スマホでは .controls が position: fixed のため、
+        // 親要素を transform するとボタンまで動いてしまう。
+        // TOTAL・ページボタン・ギャラリーを同じ量だけ戻す。
+        // .controls は親を動かさないため固定位置のまま。
+        collectionContent.style.transform = "";
+        if (counter) counter.style.transform = `translateY(${delta}px)`;
+        if (pagination) pagination.style.transform = `translateY(${delta}px)`;
+        if (gallery) gallery.style.transform = `translateY(${delta}px)`;
+
+        // 画像数が 9→8 のように変わると、1行あたりの列数が変わって
+        // item-size が一気に大きくなり、中央配置を戻した後に下端だけ
+        // わずかにはみ出すことがある。
+        // その場合だけ、下端に収まるまで画像サイズを少し縮める。
+        const captureRect = capture.getBoundingClientRect();
+        const galleryRect = gallery.getBoundingClientRect();
+        const bottomMargin = 2;
+        if (galleryRect.bottom > captureRect.bottom - bottomMargin) {
+          const overflow = galleryRect.bottom - (captureRect.bottom - bottomMargin);
+          const currentSize = parseFloat(getComputedStyle(root).getPropertyValue("--item-size"));
+          if (Number.isFinite(currentSize) && currentSize > AUTO_FIT.minItemSize) {
+            root.style.setProperty(
+              "--item-size",
+              `${Math.max(AUTO_FIT.minItemSize, currentSize - overflow)}px`
+            );
+          }
+        }
+      } else {
+        collectionContent.style.transform = `translateY(${delta}px)`;
+        if (counter) counter.style.transform = "";
+        if (pagination) pagination.style.transform = "";
+        if (gallery) gallery.style.transform = "";
+      }
+    }
+  } else if (!showUncheckedOnly) {
+    collectionContent.style.transform = "";
+    if (counter) counter.style.transform = "";
+    if (pagination) pagination.style.transform = "";
+    if (gallery) gallery.style.transform = "";
+  }
 }
 
 function scheduleAutoLayout() {
@@ -1695,6 +1792,14 @@ function scheduleAutoLayout() {
    PNG保存処理
 ========================= */
 function toggleUncheckedOnly() {
+  if (!showUncheckedOnly) {
+    const header = document.getElementById("header-area");
+    uncheckedHeaderAnchorTop = header?.getBoundingClientRect().top ?? null;
+  } else {
+    uncheckedHeaderAnchorTop = null;
+    collectionContent.style.transform = "";
+  }
+
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
   renderView();
