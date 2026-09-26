@@ -1673,7 +1673,29 @@ function getAvailableSize() {
 function contentFits() {
   const available = getAvailableSize();
   const rect = collectionContent.getBoundingClientRect();
-  return (rect.width <= available.width && rect.height <= available.height);
+
+  if (rect.width > available.width || rect.height > available.height) {
+    return false;
+  }
+
+  // スマホの未獲得のみモードでは、TOTAL・ページボタンの位置を
+  // 通常モードと同じ位置に固定している。その分だけギャラリーが
+  // 下へ押し出される場合があるため、その状態まで含めて判定する。
+  if (isMobileView() && showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    const header = document.getElementById("header-area");
+    if (header && gallery) {
+      const delta = uncheckedHeaderAnchorTop - header.getBoundingClientRect().top;
+      const galleryBottom = gallery.getBoundingClientRect().bottom + delta;
+      const captureBottom = capture.getBoundingClientRect().bottom -
+        parseFloat(getComputedStyle(capture).paddingBottom || "0");
+
+      if (galleryBottom > captureBottom) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function findLargestItemSize() {
