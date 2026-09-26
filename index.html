@@ -1689,23 +1689,6 @@ function contentFits() {
     return false;
   }
 
-  // スマホの未獲得のみモードでは、TOTAL・ページボタンの位置を
-  // 通常モードと同じ位置に固定している。その分だけギャラリーが
-  // 下へ押し出される場合があるため、その状態まで含めて判定する。
-  if (isMobileView() && showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
-    const header = document.getElementById("header-area");
-    if (header && gallery) {
-      const delta = uncheckedHeaderAnchorTop - header.getBoundingClientRect().top;
-      const galleryBottom = gallery.getBoundingClientRect().bottom + delta;
-      const captureBottom = capture.getBoundingClientRect().bottom -
-        parseFloat(getComputedStyle(capture).paddingBottom || "0");
-
-      if (galleryBottom > captureBottom) {
-        return false;
-      }
-    }
-  }
-
   return true;
 }
 
@@ -1725,16 +1708,11 @@ function findLargestItemSize() {
 }
 
 function applyAutoLayout() {
-  const counter = document.getElementById("counter");
-  const pagination = document.getElementById("pagination-area");
-
-  // スマホの未獲得のみモードでは、#capture の flex 中央配置から
-  // #collection-content を外す。
-  // 画像数が 9→8 のように変わって高さが変化しても、TOTAL の位置を
-  // 「モード切替前の位置」に固定するため、transform で後から戻す方式は使わない。
-  if (isMobileView() && showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
-    // 未獲得モードへ入った瞬間のTOTAL位置を #capture 基準で固定。
-    // 現在の要素位置を再測定して補正する処理は行わない。
+  // 通常モードでは元のflex中央配置をそのまま使う。
+  // 未獲得モードのときだけ collection-content を #capture 内の固定位置にする。
+  // これにより、未獲得数の増減でギャラリーの高さが変わっても
+  // TOTAL / C7S4 / C7S3 は動かない。
+  if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
     const captureRect = capture.getBoundingClientRect();
     const fixedTop = uncheckedHeaderAnchorTop - captureRect.top;
 
@@ -1742,40 +1720,14 @@ function applyAutoLayout() {
     collectionContent.style.top = `${fixedTop}px`;
     collectionContent.style.left = "50%";
     collectionContent.style.transform = "translateX(-50%)";
-
-    if (counter) counter.style.transform = "";
-    if (pagination) pagination.style.transform = "";
-    if (gallery) gallery.style.transform = "";
-  } else if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
-    // PC版もスマホ版と同じく、未獲得モード中は collectionContent を
-    // #capture の中央配置から外す。
-    // これにより画像数・行数・画像サイズが変化しても、
-    // TOTAL / C7S4 / C7S3 を含む上部全体が一緒に上下しない。
-    const captureRect = capture.getBoundingClientRect();
-    const fixedTop = uncheckedHeaderAnchorTop - captureRect.top;
-
-    collectionContent.style.position = "absolute";
-    collectionContent.style.top = `${fixedTop}px`;
-    collectionContent.style.left = "50%";
-    collectionContent.style.transform = "translateX(-50%)";
-
-    if (counter) counter.style.transform = "";
-    if (pagination) pagination.style.transform = "";
-    if (gallery) gallery.style.transform = "";
-  } else if (!showUncheckedOnly) {
-    const header = document.getElementById("header-area");
-    if (header) header.style.transform = "";
+  } else {
+    // 未獲得モードを解除したら、元のCSSによるflex中央配置へ完全に戻す。
     collectionContent.style.position = "";
     collectionContent.style.top = "";
     collectionContent.style.left = "";
     collectionContent.style.transform = "";
-    if (counter) counter.style.transform = "";
-    if (pagination) pagination.style.transform = "";
-    if (gallery) gallery.style.transform = "";
   }
 
-  // 未獲得モードで固定位置を設定した後にサイズを決める。
-  // これにより、画像数が変わっても中央配置による位置変動をサイズ計算に混ぜない。
   root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
 }
 
@@ -1794,12 +1746,12 @@ function scheduleAutoLayout() {
 ========================= */
 function toggleUncheckedOnly() {
   if (!showUncheckedOnly) {
+    // 通常 → 未獲得のみ：切り替え直前のTOTAL位置だけを記録。
     const header = document.getElementById("header-area");
     uncheckedHeaderAnchorTop = header?.getBoundingClientRect().top ?? null;
   } else {
+    // 未獲得のみ → 通常：固定を完全解除して元のflex中央配置へ戻す。
     uncheckedHeaderAnchorTop = null;
-    const header = document.getElementById("header-area");
-    if (header) header.style.transform = "";
     collectionContent.style.position = "";
     collectionContent.style.top = "";
     collectionContent.style.left = "";
