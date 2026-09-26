@@ -1019,6 +1019,7 @@ const PAGES = [
 
 let currentPageIndex = 0;
 let showUncheckedOnly = false; // 未獲得のみ表示フラグ
+let uncheckedHeaderAnchorTop = null;
 
 function getCurrentCollection() {
   return PAGES[currentPageIndex].collection;
@@ -1679,6 +1680,20 @@ function findLargestItemSize() {
 
 function applyAutoLayout() {
   root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
+
+  // 未獲得のみモードではギャラリーの高さが変わるため、
+  // flex中央配置によってヘッダー・ページボタンまで上下に動いてしまう。
+  // モード切替前のヘッダー位置だけを基準にして、全体を同じ位置へ戻す。
+  if (showUncheckedOnly && uncheckedHeaderAnchorTop !== null) {
+    const header = document.getElementById("header-area");
+    if (header) {
+      const currentTop = header.getBoundingClientRect().top;
+      collectionContent.style.transform =
+        `translateY(${uncheckedHeaderAnchorTop - currentTop}px)`;
+    }
+  } else if (!showUncheckedOnly) {
+    collectionContent.style.transform = "";
+  }
 }
 
 function scheduleAutoLayout() {
@@ -1695,6 +1710,14 @@ function scheduleAutoLayout() {
    PNG保存処理
 ========================= */
 function toggleUncheckedOnly() {
+  if (!showUncheckedOnly) {
+    const header = document.getElementById("header-area");
+    uncheckedHeaderAnchorTop = header?.getBoundingClientRect().top ?? null;
+  } else {
+    uncheckedHeaderAnchorTop = null;
+    collectionContent.style.transform = "";
+  }
+
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
   renderView();
