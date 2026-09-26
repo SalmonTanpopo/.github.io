@@ -1662,11 +1662,22 @@ function getAvailableSize() {
 //   const rect = collectionContent.getBoundingClientRect();
 //   return (rect.width <= available.width && rect.height <= available.height);
 // }
+// function contentFits() {
+//   const available = getAvailableSize();
+//   // 外枠(100%固定)ではなく、実際に画像が並んでいる#galleryの実サイズを測定する
+//   const rect = gallery.getBoundingClientRect();
+//   return (rect.width <= available.width && rect.height <= available.height);
+// }
 function contentFits() {
   const available = getAvailableSize();
-  // 外枠(100%固定)ではなく、実際に画像が並んでいる#galleryの実サイズを測定する
-  const rect = gallery.getBoundingClientRect();
-  return (rect.width <= available.width && rect.height <= available.height);
+  const galleryRect = gallery.getBoundingClientRect();
+  const contentRect = collectionContent.getBoundingClientRect();
+
+  // 幅は画像の横幅(#gallery)、高さはヘッダー等も含めた全体の高さ(#collection-content)で判定
+  return (
+    galleryRect.width <= available.width &&
+    contentRect.height <= available.height
+  );
 }
 
 // function findLargestItemSize() {
