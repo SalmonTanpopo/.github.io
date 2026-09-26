@@ -1688,11 +1688,18 @@ function applyAutoLayout() {
     const header = document.getElementById("header-area");
     if (header) {
       const currentTop = header.getBoundingClientRect().top;
-      collectionContent.style.transform =
-        `translateY(${uncheckedHeaderAnchorTop - currentTop}px)`;
+      const delta = uncheckedHeaderAnchorTop - currentTop;
+      collectionContent.style.transform = `translateY(${delta}px)`;
+
+      // スマホでは controls が collectionContent 内にあるため、
+      // 親の transform の影響を打ち消して固定位置を維持する。
+      if (isMobileView()) {
+        controls.style.transform = `translateX(-50%) translateY(${-delta}px)`;
+      }
     }
   } else if (!showUncheckedOnly) {
     collectionContent.style.transform = "";
+    controls.style.transform = "";
   }
 }
 
@@ -1716,6 +1723,7 @@ function toggleUncheckedOnly() {
   } else {
     uncheckedHeaderAnchorTop = null;
     collectionContent.style.transform = "";
+    controls.style.transform = "";
   }
 
   showUncheckedOnly = !showUncheckedOnly;
