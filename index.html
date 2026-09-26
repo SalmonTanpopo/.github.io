@@ -1210,11 +1210,6 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
   itemArea.className = "variant-view-items";
   if (!showBulkCheckbox) itemArea.classList.add("no-bulk-checkbox");
 
-  // 通常モードでは既存の枠・並びを維持する。
-  // 未獲得のみモードでは、獲得済みアイテム用の空枠を作らず、
-  // 残ったアイテムだけで詰め直す。これにより画像サイズも
-  // 「元の全アイテム数」ではなく「現在表示するアイテム数」に
-  // 合わせて自動調整される。
   const visibleItems = [];
   for (const type of typeOrder) {
     const item = itemsByType.get(type);
@@ -1242,7 +1237,6 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
 
   const itemCountInRow = visibleItems.length;
   
-  // 未獲得のみモードで行内に表示対象アイテムがない場合は非表示
   if (showUncheckedOnly && itemCountInRow === 0) {
     return null;
   }
@@ -1294,7 +1288,7 @@ function updateVariantBulkCheckboxes() {
     const items = getRenderedVariantItems(variant);
     const checkedCount = items.filter(item => item.classList.contains("checked")).length;
     checkbox.checked = items.length > 0 && checkedCount === items.length;
-    checkbox.indeterminate = false//checkedCount > 0 && checkedCount < items.length;
+    checkbox.indeterminate = false;
     checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
   }
 }
@@ -1363,7 +1357,6 @@ function renderMobileVariantView() {
 
     if (primary) {
       items.classList.add("mobile-primary-variant-items");
-      // 未獲得のみでは、獲得済みを除いた実際の表示数で再配置する。
       items.style.setProperty(
         "--mobile-primary-column-count",
         showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit
@@ -1459,10 +1452,6 @@ function renderMobileVariantView() {
 function renderUncheckedFlatVariantView() {
   const items = [];
 
-  // variant名は表示しないが、並び順は「種類」を最優先にする。
-  // 例：A(normal), A(holo), B(normal), B(holo) ...
-  // こうすることで、同じ種類の別variantができるだけ横に並ぶ。
-  // variantの順番自体は、通常表示で上にあるvariantから維持する。
   for (const { types } of getCurrentCollection()) {
     for (const typeData of types) {
       for (const variant of getVariants(typeData)) {
@@ -1489,8 +1478,6 @@ function renderUncheckedFlatVariantView() {
 
   gallery.appendChild(container);
 
-  // 1行固定ではなく、行数も含めて画像が最大になる列数を選ぶ。
-  // 幅だけでなく高さも評価するため、必要なら自然に改行される。
   requestAnimationFrame(() => {
     const captureRect = capture.getBoundingClientRect();
     const headerRect = document.getElementById("header-area")?.getBoundingClientRect();
@@ -1514,10 +1501,6 @@ function renderUncheckedFlatVariantView() {
       const heightSize = (availableHeight - (rows - 1) * 2) / rows;
       const size = Math.min(widthSize, heightSize);
 
-      // 画像サイズを最優先する。
-      // 同じ（または実質同じ）サイズなら、同じ種類が横に並びやすい
-      // 列数を選ぶ。列数をvariant数の倍数に近づけることで、
-      // A(normal), A(holo), B(normal), B(holo) ... のまとまりを保ちやすくする。
       const variantCountByType = new Map();
       for (const item of items) {
         variantCountByType.set(item.type, (variantCountByType.get(item.type) || 0) + 1);
@@ -1543,8 +1526,6 @@ function renderUncheckedFlatVariantView() {
 }
 
 function renderVariantView() {
-  // 未獲得のみモードではvariant名を表示せず、variantをまたいで
-  // 未獲得アイテムだけを1つのグリッドに詰めて表示する。
   if (showUncheckedOnly) {
     renderUncheckedFlatVariantView();
     return;
@@ -1585,6 +1566,13 @@ function renderPagination() {
     btn.addEventListener("click", () => {
       if (currentPageIndex !== index) {
         currentPageIndex = index;
+
+        // C7S4(index 0) 以外のページへ移動した際、未獲得のみモードを解除して通常モードに戻す
+        if (currentPageIndex !== 0 && showUncheckedOnly) {
+          showUncheckedOnly = false;
+          uncheckedButton.classList.remove("active");
+        }
+
         renderPagination();
         renderView();
       }
@@ -1636,6 +1624,11 @@ function renderView() {
   
   document.body.classList.remove("page-0", "page-1");
   document.body.classList.add(`page-${currentPageIndex}`);
+
+  // C7S4 ページ (currentPageIndex === 0) でのみ「未獲得のみ」ボタンを表示
+  if (uncheckedButton) {
+    uncheckedButton.style.display = (currentPageIndex === 0) ? "" : "none";
+  }
 
   renderVariantView();
   updateCounter();
