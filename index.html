@@ -455,6 +455,14 @@ button {
   border-color: #ffffff;
 }
 
+/* マスターボタンON時 */
+#btn-toggle-master.active {
+  background: #ff8c00;
+  color: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.8);
+}
+
 body.is-saving .controls {
   display: none;
 }
@@ -526,7 +534,7 @@ body.is-saving .controls {
    PC版
 ========================= */
 @media (min-width: 769px) {
-  /* ★ 追加：PC版でも外枠が画像サイズに合わせて伸縮するようにする */
+  /* 外枠が画像サイズに合わせて伸縮するようにする */
   #collection-content {
     width: max-content;
     max-width: 100%;
@@ -838,6 +846,7 @@ body.is-saving .controls {
     height: 80% !important;
   }
 }
+
 /* PNG保存時のみ、下寄りにズレる分を上に引っ張り上げる */
 body.is-saving .mobile-compact-variant-label,
 body.is-saving .mobile-variant-special-label {
@@ -862,6 +871,7 @@ body.is-saving .mobile-variant-special-label {
       </div>
 
       <div class="controls">
+        <button id="btn-toggle-master" type="button">マスター</button>
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
         <button id="btn-save" type="button">PNG画像保存</button>
       </div>
@@ -1028,6 +1038,7 @@ const PAGES = [
 
 let currentPageIndex = 0;
 let showUncheckedOnly = false; // 未獲得のみ表示フラグ
+let isMasterMode = false;       // マスターモード切り替えフラグ
 
 function getCurrentCollection() {
   return PAGES[currentPageIndex].collection;
@@ -1056,6 +1067,7 @@ const collectionContent = document.getElementById("collection-content");
 const gallery = document.getElementById("gallery");
 const paginationArea = document.getElementById("pagination-area");
 
+const masterButton = document.getElementById("btn-toggle-master");
 const uncheckedButton = document.getElementById("btn-toggle-unchecked");
 const saveButton = document.getElementById("btn-save");
 const controls = document.querySelector(".controls");
@@ -1081,15 +1093,22 @@ function getStorageKey(type, variant) {
   return type === "peanut" ? PEANUT_KEY : type;
 }
 
-function isItemChecked(type, variant) {
+function getItemState(type, variant) {
   const key = getStorageKey(type, variant);
-  return localStorage.getItem(key) === "true";
+  const val = localStorage.getItem(key);
+  if (val === "true" || val === "checked") return "true";
+  if (val === "master") return "master";
+  return "false";
+}
+
+function isItemChecked(type, variant) {
+  return getItemState(type, variant) !== "false";
 }
 
 /* =========================
-   チェックマーク描画
+   チェックマーク描画 (視認性向上改修)
 ========================= */
-function drawCheckMark(canvas) {
+function drawCheckMark(canvas, isMaster = false) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   canvas.width = 200;
@@ -1097,26 +1116,63 @@ function drawCheckMark(canvas) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
   ctx.scale(2, 2);
+
+  // 影の描画（ドロップシャドウで立体感と視認性を向上）
+  ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+  ctx.shadowBlur = 5;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
   ctx.beginPath();
   ctx.moveTo(25, 50);
   ctx.lineTo(45, 70);
   ctx.lineTo(80, 25);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 22;
+
+  // 1. 最外枠（半透明黒線でどんな背景画像からもくっきりと浮き上がらせる）
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
+  ctx.lineWidth = 30;
   ctx.stroke();
-  ctx.strokeStyle = "#ff2a2a";
+
+  // 2. 中間枠（白縁）
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 20;
+  ctx.stroke();
+
+  // シャドウをオフにして内側の鮮やかさを保つ
+  ctx.shadowColor = "transparent";
+
+  // 3. メインカラー（通常：赤 / マスター：オレンジ）
+  ctx.strokeStyle = isMaster ? "#ff8c00" : "#ff2a2a";
   ctx.lineWidth = 12;
   ctx.stroke();
+
   ctx.restore();
 }
 
-function createCheckCanvas() {
+function createCheckCanvas(isMaster = false) {
   const canvas = document.createElement("canvas");
   canvas.className = "check-canvas";
-  drawCheckMark(canvas);
+  drawCheckMark(canvas, isMaster);
   return canvas;
+}
+
+function updateItemVisual(item, state) {
+  const canvas = item.querySelector(".check-canvas");
+  if (state === "false") {
+    item.classList.remove("checked", "master");
+  } else {
+    item.classList.add("checked");
+    if (state === "master") {
+      item.classList.add("master");
+    } else {
+      item.classList.remove("master");
+    }
+    if (canvas) {
+      drawCheckMark(canvas, state === "master");
+    }
+  }
 }
 
 /* =========================
@@ -1124,6 +1180,8 @@ function createCheckCanvas() {
 ========================= */
 function createCollectionItem(type, variant = null) {
   const key = getStorageKey(type, variant);
+  const state = getItemState(type, variant);
+  
   const item = document.createElement("div");
   const image = document.createElement("img");
   
@@ -1132,21 +1190,43 @@ function createCollectionItem(type, variant = null) {
   item.dataset.type = type;
   if (variant !== null) item.dataset.variant = variant;
   
-  item.classList.toggle("checked", localStorage.getItem(key) === "true");
-  
   image.className = "collection-image";
   image.src = variant === null
     ? `images/special/${type}.webp`
     : `images/${variant}/${type}_${variant}.webp`;
   image.alt = variant === null ? type : `${type} ${variant}`;
   
-  item.append(image, createCheckCanvas());
+  const canvas = createCheckCanvas(state === "master");
+  item.append(image, canvas);
+
+  updateItemVisual(item, state);
+
   item.addEventListener("click", () => {
-    const checked = !item.classList.contains("checked");
-    item.classList.toggle("checked", checked);
-    localStorage.setItem(key, String(checked));
-    
-    if (showUncheckedOnly && checked) {
+    const currentState = getItemState(type, variant);
+    let nextState;
+
+    if (isMasterMode) {
+      // マスターモード時：
+      if (currentState === "true") {
+        nextState = "master"; // 通常チェック済みをマスター(オレンジ)に
+      } else if (currentState === "master") {
+        nextState = "true";   // マスターを通常チェック(赤)に
+      } else {
+        nextState = "master"; // 未獲得をクリック時直接マスターに
+      }
+    } else {
+      // 通常モード時：
+      if (currentState === "true" || currentState === "master") {
+        nextState = "false";  // 解除
+      } else {
+        nextState = "true";   // 通常チェック(赤)
+      }
+    }
+
+    localStorage.setItem(key, nextState);
+    updateItemVisual(item, nextState);
+
+    if (showUncheckedOnly && nextState !== "false") {
       renderView();
     } else {
       updateCounter();
@@ -1261,10 +1341,12 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
     bulkCheckbox.addEventListener("change", event => {
       event.stopPropagation();
       const nextChecked = bulkCheckbox.checked;
+      const targetState = nextChecked ? (isMasterMode ? "master" : "true") : "false";
       const items = getRenderedVariantItems(labelText);
+      
       for (const item of items) {
-        item.classList.toggle("checked", nextChecked);
-        localStorage.setItem(item.dataset.storageKey, String(nextChecked));
+        localStorage.setItem(item.dataset.storageKey, targetState);
+        updateItemVisual(item, targetState);
       }
       if (showUncheckedOnly && nextChecked) {
         renderView();
@@ -1310,10 +1392,12 @@ function createMobileVariantBulkCheckbox(variant) {
   checkbox.addEventListener("change", event => {
     event.stopPropagation();
     const nextChecked = checkbox.checked;
+    const targetState = nextChecked ? (isMasterMode ? "master" : "true") : "false";
     const items = getRenderedVariantItems(variant);
+
     for (const item of items) {
-      item.classList.toggle("checked", nextChecked);
-      localStorage.setItem(item.dataset.storageKey, String(nextChecked));
+      localStorage.setItem(item.dataset.storageKey, targetState);
+      updateItemVisual(item, targetState);
     }
     if (showUncheckedOnly && nextChecked) {
       renderView();
@@ -1616,7 +1700,8 @@ function getCurrentPageCollectionKeys() {
 function updateCounter() {
   const keys = getCurrentPageCollectionKeys();
   const checkedCount = keys.reduce((count, key) => {
-    return count + (localStorage.getItem(key) === "true" ? 1 : 0);
+    const val = localStorage.getItem(key);
+    return count + (val === "true" || val === "checked" || val === "master" ? 1 : 0);
   }, 0);
   document.getElementById("current-count").textContent = checkedCount;
   document.getElementById("total-count").textContent = keys.length;
@@ -1657,17 +1742,6 @@ function getAvailableSize() {
   };
 }
 
-// function contentFits() {
-//   const available = getAvailableSize();
-//   const rect = collectionContent.getBoundingClientRect();
-//   return (rect.width <= available.width && rect.height <= available.height);
-// }
-// function contentFits() {
-//   const available = getAvailableSize();
-//   // 外枠(100%固定)ではなく、実際に画像が並んでいる#galleryの実サイズを測定する
-//   const rect = gallery.getBoundingClientRect();
-//   return (rect.width <= available.width && rect.height <= available.height);
-// }
 function contentFits() {
   const available = getAvailableSize();
   const galleryRect = gallery.getBoundingClientRect();
@@ -1680,23 +1754,9 @@ function contentFits() {
   );
 }
 
-// function findLargestItemSize() {
-//   let low = AUTO_FIT.minItemSize;
-//   let high = AUTO_FIT.maxItemSize;
-//   for (let i = 0; i < 14; i++) {
-//     const middle = (low + high) / 2;
-//     root.style.setProperty("--item-size", `${middle}px`);
-//     if (contentFits()) {
-//       low = middle;
-//     } else {
-//       high = middle;
-//     }
-//   }
-//   return Math.max(AUTO_FIT.minItemSize, Math.floor(low * 10) / 10);
-// }
 function findLargestItemSize() {
   // スマホは横幅(約370px)に10列収めるため12pxまで縮小を許可
-  // PCは米粒化を防ぐため100px未満にならないように設定
+  // PCは米粒化を防ぐため50px未満にならないように設定
   const minSize = isMobileView() ? 12 : 50;
   const maxSize = AUTO_FIT.maxItemSize;
 
@@ -1729,6 +1789,14 @@ function scheduleAutoLayout() {
 }
 
 /* =========================
+   マスターモード切り替え処理
+========================= */
+function toggleMasterMode() {
+  isMasterMode = !isMasterMode;
+  masterButton.classList.toggle("active", isMasterMode);
+}
+
+/* =========================
    PNG保存処理
 ========================= */
 function toggleUncheckedOnly() {
@@ -1752,48 +1820,6 @@ async function waitForImages(target) {
   }));
 }
 
-// function cropControlSpace(sourceCanvas) {
-//   const contentRect = collectionContent.getBoundingClientRect();
-//   const captureRect = capture.getBoundingClientRect();
-
-//   const canvasScaleX = sourceCanvas.width / captureRect.width;
-//   const canvasScaleY = sourceCanvas.height / captureRect.height;
-
-//   const left = Math.max(
-//     0,
-//     Math.round((contentRect.left - captureRect.left) * canvasScaleX)
-//   );
-//   const top = Math.max(
-//     0,
-//     Math.round((contentRect.top - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
-//   );
-//   const right = Math.min(
-//     sourceCanvas.width,
-//     Math.round((contentRect.right - captureRect.left) * canvasScaleX)
-//   );
-//   const bottom = Math.min(
-//     sourceCanvas.height,
-//     Math.round((contentRect.bottom - captureRect.top) * canvasScaleY)+(20 * canvasScaleY)
-//   );
-
-//   const croppedWidth = Math.max(1, right - left);
-//   const croppedHeight = Math.max(1, bottom - top);
-
-//   const croppedCanvas = document.createElement("canvas");
-//   croppedCanvas.width = croppedWidth;
-//   croppedCanvas.height = croppedHeight;
-
-//   const ctx = croppedCanvas.getContext("2d");
-//   if (!ctx) return sourceCanvas;
-
-//   ctx.drawImage(
-//     sourceCanvas,
-//     left, top, croppedWidth, croppedHeight,
-//     0, 0, croppedWidth, croppedHeight
-//   );
-
-//   return croppedCanvas;
-// }
 function cropControlSpace(sourceCanvas) {
   const contentRect = collectionContent.getBoundingClientRect();
   const captureRect = capture.getBoundingClientRect();
@@ -1942,6 +1968,7 @@ async function savePNG() {
 /* =========================
    イベント
 ========================= */
+masterButton.addEventListener("click", toggleMasterMode);
 uncheckedButton.addEventListener("click", toggleUncheckedOnly);
 saveButton.addEventListener("click", savePNG);
 
