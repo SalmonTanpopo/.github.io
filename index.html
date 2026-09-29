@@ -5,72 +5,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>コレクション</title>
 
+<!-- Google Fonts (Noto Sans JP / Anton) の読み込み -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
+
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <style>
 :root {
-  /*
-    JavaScriptが画面内に収まる最大サイズを計算し、
-    --item-sizeを自動更新する。
-  */
   --item-size: 48px;
-
-  /*
-    PC版は余白を詰め、画像へ使える面積を増やす。
-    画像同士は重ならず、最低限の間隔だけ残す。
-  */
   --gap-item: 2px;
   --gap-block: 5px;
   --variant-bulk-column-width: 22px;
-
-  /* バリアント名を置く左側の専用列幅 */
   --variant-label-column-width: 66px;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html,
-body {
+html, body {
   width: 100%;
   height: 100%;
   margin: 0;
-
-  /* スマホのダブルタップ拡大を無効化する。 */
   touch-action: manipulation;
 }
 
 body {
   height: 100dvh;
   overflow: hidden;
-
   display: flex;
   flex-direction: column;
-
   position: relative;
-
   text-align: center;
   background: #ffffff;
+  /* 全体フォントをNoto Sans JPに統一 */
+  font-family: "Noto Sans JP", sans-serif;
 }
 
-/* =========================
-   キャプチャ領域
-========================= */
+/* キャプチャ領域 */
 #capture {
   flex: 1;
   min-height: 0;
   width: 100%;
-
   padding: 6px;
   overflow: hidden;
-
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* 上揃えにしてヘッダー位置を最上部に固定 */
-
-  /* デフォルト（ページ2）の背景グラデーション */
+  justify-content: flex-start;
   background-image: linear-gradient(
     148deg,
     rgba(255, 93, 4, 1),
@@ -79,56 +61,43 @@ body {
   );
 }
 
-/* ページ1 (内部的にはpage-0) 専用の背景グラデーション */
 body.page-0 #capture {
   background-image: linear-gradient(
     148deg,
-    rgba(140, 230, 255, 1),         /* 薄めの水色 */
-    rgba(255, 255, 255, 1) 18% 81%, /* 間の白（ページ2と同じ幅） */
-    rgba(235, 70, 160, 1)           /* 赤み強めの赤紫 */
+    rgba(140, 230, 255, 1),
+    rgba(255, 255, 255, 1) 18% 81%,
+    rgba(235, 70, 160, 1)
   );
 }
 
 #collection-content {
   width: 100%;
-
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: flex-start;
 }
 
-/* =========================
-   ヘッダー
-========================= */
+/* ヘッダー & カウンター */
 #header-area {
   width: 100%;
   margin-bottom: 5px;
-
   position: relative;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   gap: 8px;
 }
 
 #counter {
   color: #ffffff;
-
-  font-family: "Impact", "Arial Black", sans-serif;
+  font-family: "Anton", "Impact", "Arial Black", sans-serif;
   font-size: 26px;
-
   letter-spacing: 2px;
-
   -webkit-text-stroke: 1.5px #000000;
 }
 
-/* =========================
-   ページネーション
-========================= */
+/* ページネーション */
 #pagination-area {
   display: flex;
   align-items: center;
@@ -140,18 +109,13 @@ body.page-0 #capture {
 .page-btn {
   min-width: 100px;
   height: 34px;
-
   padding: 0 15px;
-
   font-size: 16px;
   font-weight: bold;
-
   border: 2px solid #ffffff;
   border-radius: 17px;
-
   background: rgba(0, 0, 0, 0.4);
   color: #ffffff;
-
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
@@ -163,30 +127,22 @@ body.page-0 #capture {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
-/* PNG保存時はページボタンを非表示にする */
-body.is-saving #pagination-area {
+body.is-saving #pagination-area,
+body.is-saving .controls {
   display: none;
 }
 
-/* =========================
-   ギャラリー
-========================= */
+/* ギャラリー & バリアントレイアウト */
 #gallery {
   width: 100%;
-
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
-
   gap: var(--gap-block);
   min-height: 0;
 }
 
-/* =========================
-   バリアントごとの表示
-========================= */
 .unchecked-flat-items {
   display: grid;
   grid-template-columns: repeat(var(--unchecked-flat-column-count), var(--item-size));
@@ -198,68 +154,50 @@ body.is-saving #pagination-area {
 
 .variant-view-row {
   flex: 0 0 auto;
-
   display: flex;
   align-items: center;
-
   gap: 3px;
   padding: 2px 3px;
-
   background: rgba(255, 255, 255, 0.25);
-
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 6px;
-
   box-shadow: 0 3px 5px rgba(0, 0, 0, 0.08);
 }
 
 .variant-view-header {
   flex: 0 0 var(--variant-label-column-width);
-
   width: var(--variant-label-column-width);
   height: var(--item-size);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   pointer-events: none;
 }
 
 .variant-view-label {
   width: 100%;
   max-width: 100%;
-
   padding: 3px 3px 4px;
-
   color: #ffffff;
   background: rgba(0, 0, 0, 0.78);
-
   border: 1px solid rgba(255, 255, 255, 0.92);
   border-radius: 4px;
-
   overflow: hidden;
   white-space: nowrap;
   text-overflow: clip;
-
-  font-family: "Impact", "Arial Black", sans-serif;
+  font-family: "Anton", "Impact", "Arial Black", sans-serif;
   font-size: clamp(10px, calc(var(--item-size) * 0.2), 14px);
   line-height: 1;
   letter-spacing: 0.4px;
   text-align: center;
   text-transform: uppercase;
-
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 1),
-    0 0 3px rgba(0, 0, 0, 0.9);
-
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 1), 0 0 3px rgba(0, 0, 0, 0.9);
   -webkit-text-stroke: 0.7px #000000;
 }
 
 .variant-view-bulk-cell {
   width: var(--variant-bulk-column-width);
   height: var(--item-size);
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,194 +206,133 @@ body.is-saving #pagination-area {
 .variant-view-bulk-checkbox {
   width: clamp(13px, calc(var(--item-size) * 0.28), 19px);
   height: clamp(13px, calc(var(--item-size) * 0.28), 19px);
-
   margin: 0;
   cursor: pointer;
 }
 
 .variant-view-items {
   display: grid;
-
-  grid-template-columns:
-    repeat(
-      var(--variant-view-column-count),
-      var(--item-size)
-    )
-    var(--variant-bulk-column-width);
-
+  grid-template-columns: repeat(var(--variant-view-column-count), var(--item-size)) var(--variant-bulk-column-width);
   grid-template-rows: var(--item-size);
-
   gap: var(--gap-item);
 }
 
 .variant-view-items.no-bulk-checkbox {
-  grid-template-columns: repeat(
-    var(--variant-view-column-count),
-    var(--item-size)
-  );
+  grid-template-columns: repeat(var(--variant-view-column-count), var(--item-size));
 }
 
 .variant-view-placeholder {
   width: var(--item-size);
   height: var(--item-size);
-
   visibility: hidden;
   pointer-events: none;
 }
 
-/* =========================
-   スマホ専用バリアント配置
-========================= */
-.mobile-variant-layout,
-.mobile-primary-variants,
-.mobile-secondary-variants,
-.mobile-compact-variant-group,
-.mobile-variant-special {
+/* スマホ用特殊配置非表示定義 */
+.mobile-variant-layout, .mobile-primary-variants, .mobile-secondary-variants,
+.mobile-compact-variant-group, .mobile-variant-special {
   display: none;
 }
 
 .mobile-compact-variant-control {
   min-width: 0;
-
   align-items: center;
   justify-content: center;
 }
 
-.mobile-variant-special,
-.mobile-compact-variant-group {
+.mobile-variant-special, .mobile-compact-variant-group {
   background: rgba(255, 255, 255, 0.25);
-
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 4px;
 }
 
 .mobile-variant-special-items {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    gap: var(--gap-item);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap-item);
 }
 
 .mobile-compact-variant-items {
   display: grid;
-  grid-template-columns: repeat(
-    var(--mobile-secondary-column-count, 7),
-    var(--item-size)
-  );
-
+  grid-template-columns: repeat(var(--mobile-secondary-column-count, 7), var(--item-size));
   gap: var(--gap-item);
 }
 
 .mobile-primary-variant-items {
-  grid-template-columns: repeat(
-    var(--mobile-primary-column-count, 10),
-    var(--item-size)
-  );
+  grid-template-columns: repeat(var(--mobile-primary-column-count, 10), var(--item-size));
 }
 
-/* =========================
-   アイテム
-========================= */
+/* アイテム・チェック領域 */
 .item {
   position: relative;
-
   width: var(--item-size);
   height: var(--item-size);
-
   flex-shrink: 0;
-
   cursor: pointer;
 }
 
 .collection-image {
   position: relative;
   z-index: 1;
-
   display: block;
-
   width: 100%;
   height: 100%;
-
   object-fit: cover;
 }
 
-/* =========================
-   チェックマーク
-========================= */
 .check-canvas {
   display: none;
-
   position: absolute;
   z-index: 2;
-
   left: 25%;
   top: 55%;
-
   width: 50%;
   height: 50%;
-
   pointer-events: none;
 }
 
-.item.checked .check-canvas {
-  display: block;
-}
+.item.checked .check-canvas { display: block; }
 
-/* =========================
-   ボタン
-========================= */
+/* ボタン類 */
 .controls {
   z-index: 10;
-
   position: absolute;
   top: 50%;
   right: 0;
-
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-
   gap: 15px;
   margin: 0;
-
   transform: translateY(-50%);
 }
 
 button {
   min-width: 70px;
   height: 46px;
-
   padding: 0 20px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   border: 1px solid #cccccc;
   border-radius: 8px;
-
   background: #ffddff;
-
   font-size: 18px;
   font-weight: bold;
   line-height: normal;
-
   white-space: nowrap;
-
   cursor: pointer;
-
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: "Noto Sans JP", sans-serif;
 }
 
-/* 未獲得のみボタンON時 */
 #btn-toggle-unchecked.active {
   background: #ff5d04;
   color: #ffffff;
   border-color: #ffffff;
 }
 
-/* マスターボタンON時 */
 #btn-toggle-master.active {
   background: #ff8c00;
   color: #ffffff;
@@ -463,13 +340,7 @@ button {
   box-shadow: 0 0 8px rgba(255, 140, 0, 0.8);
 }
 
-body.is-saving .controls {
-  display: none;
-}
-
-/* =========================
-   画像保存用オーバーレイ（アプリ内ブラウザ対策）
-========================= */
+/* 保存用オーバーレイ */
 #save-overlay {
   display: none;
   position: fixed;
@@ -487,9 +358,7 @@ body.is-saving .controls {
   touch-action: none;
 }
 
-#save-overlay.active {
-  display: flex;
-}
+#save-overlay.active { display: flex; }
 
 #save-overlay-message {
   color: #ffffff;
@@ -509,7 +378,6 @@ body.is-saving .controls {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   flex-shrink: 1;
   min-height: 0;
-  
   pointer-events: auto;
   user-select: auto;
   -webkit-user-select: auto;
@@ -530,47 +398,35 @@ body.is-saving .controls {
   flex-shrink: 0;
 }
 
-/* =========================
-   PC版
-========================= */
+/* PC版スタイル */
 @media (min-width: 769px) {
-  /* 外枠が画像サイズに合わせて伸縮するようにする */
   #collection-content {
     width: max-content;
     max-width: 100%;
   }
   #capture {
-    position:relative;
+    position: relative;
     padding-right: 6px;
   }
-
-  #header-area {
-    position: static;
-  }
-
+  #header-area { position: static; }
   .controls {
     top: 18px;
     right: 20px;
     transform: none;
   }
-
   .variant-view-row.pc-top-label-variant {
     position: relative;
     padding-top: 20px;
   }
-
   .variant-view-row.pc-top-label-variant .variant-view-header {
     position: absolute;
     top: 2px;
     left: 3px;
-
     width: auto;
     height: auto;
     flex-basis: auto;
-
     justify-content: flex-start;
   }
-
   .variant-view-row.pc-top-label-variant .variant-view-label {
     width: auto;
     max-width: none;
@@ -580,57 +436,35 @@ body.is-saving .controls {
   }
 }
 
-/* =========================
-   スマホ版
-========================= */
+/* スマホ版スタイル */
 @media (max-width: 768px) {
   :root {
     --gap-item: 1px;
     --gap-block: 1px;
-
     --mobile-controls-reserve: 35px;
   }
 
   #capture {
-    padding:
-      1px
-      2px
-      calc(
-        var(--mobile-controls-reserve)
-        + env(safe-area-inset-bottom)
-      );
-
+    padding: 1px 2px calc(var(--mobile-controls-reserve) + env(safe-area-inset-bottom));
     overflow: hidden;
-
     align-items: center;
     justify-content: flex-start;
   }
 
-  body.is-saving #capture {
-    padding: 1px 2px;
-  }
+  body.is-saving #capture { padding: 1px 2px; }
 
   body.is-variant-view #collection-content {
     width: auto;
     min-width: 0;
-
     justify-content: flex-start;
   }
 
-  #header-area {
-    margin-bottom: 0;
-  }
-
+  #header-area { margin-bottom: 0; }
   #counter {
     font-size: 17px;
-
     -webkit-text-stroke: 1px #000000;
   }
-  
-  #pagination-area {
-    margin-bottom: 2px;
-  }
-  
+  #pagination-area { margin-bottom: 2px; }
   .page-btn {
     min-width: 70px;
     height: 28px;
@@ -640,35 +474,27 @@ body.is-saving .controls {
 
   body.is-variant-view #gallery {
     width: auto;
-
     align-items: center;
     justify-content: center;
-
     gap: 1px;
   }
 
-  body.is-variant-view .variant-view-row {
-    display: none;
-  }
+  body.is-variant-view .variant-view-row { display: none; }
 
   .mobile-variant-layout {
     width: max-content;
-
     display: flex;
     flex-direction: column;
     align-items: center;
-
     gap: 1px;
   }
 
   .mobile-variant-special {
     position: relative;
     width: var(--item-size);
-
     display: flex;
     flex-direction: column;
     align-items: stretch;
-
     gap: 0;
     padding: 0;
   }
@@ -676,54 +502,42 @@ body.is-saving .controls {
   .mobile-variant-special-header {
     width: 100%;
     height: 13px;
-
     display: flex;
     align-items: center;
     justify-content: flex-start;
-
     padding: 0 1px;
   }
 
   .mobile-variant-special-label {
     width: max-content;
     padding: 1px 4px;
-
     color: #ffffff;
     background: rgba(0, 0, 0, 0.78);
-
     border: 1px solid rgba(255, 255, 255, 0.9);
     border-radius: 3px;
-
-    font-family: "Impact", "Arial Black", sans-serif;
+    font-family: "Anton", "Impact", "Arial Black", sans-serif;
     font-size: 9px;
     line-height: 1;
     letter-spacing: 0.3px;
     text-transform: uppercase;
-
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
     -webkit-text-stroke: 0.35px #000000;
-
     pointer-events: none;
   }
 
-  .mobile-primary-variants,
-  .mobile-secondary-variants {
+  .mobile-primary-variants, .mobile-secondary-variants {
     width: max-content;
-
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-
     gap: 0;
   }
 
   .mobile-compact-variant-group {
     width: max-content;
-
     display: flex;
     flex-direction: column;
     align-items: stretch;
-
     gap: 0;
     padding: 0;
   }
@@ -731,103 +545,76 @@ body.is-saving .controls {
   .mobile-compact-variant-header {
     width: 100%;
     height: 13px;
-
     display: flex;
     align-items: center;
     justify-content: flex-start;
-
     padding: 0 1px;
   }
 
   .mobile-compact-variant-label {
     padding: 1px 4px;
-
     color: #ffffff;
     background: rgba(0, 0, 0, 0.78);
-
     border: 1px solid rgba(255, 255, 255, 0.9);
     border-radius: 3px;
-
-    font-family: "Impact", "Arial Black", sans-serif;
+    font-family: "Anton", "Impact", "Arial Black", sans-serif;
     font-size: 9px;
     line-height: 1;
     letter-spacing: 0.3px;
     text-transform: uppercase;
-
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
     -webkit-text-stroke: 0.35px #000000;
-
     pointer-events: none;
   }
 
   .mobile-compact-variant-body {
     width: max-content;
-
     display: flex;
     align-items: stretch;
     justify-content: flex-start;
-
     gap: 2px;
   }
 
   .mobile-compact-variant-control {
     flex: 0 0 32px;
-
     width: 32px;
     min-width: 32px;
     min-height: var(--item-size);
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     cursor: pointer;
     touch-action: manipulation;
-
     background: rgba(255, 255, 255, 0.22);
-
     border-left: 1px solid rgba(255, 255, 255, 0.65);
     border-radius: 0 3px 3px 0;
   }
 
-  .mobile-compact-variant-control
-  .variant-view-bulk-checkbox {
+  .mobile-compact-variant-control .variant-view-bulk-checkbox {
     width: 20px;
     height: 20px;
-
     margin: 0;
-
     accent-color: #ff5a5a;
-
     background: rgba(255, 255, 255, 0.92);
     border-radius: 3px;
-
     cursor: pointer;
   }
 
-  .variant-view-bulk-checkbox {
-    margin: 0;
-  }
+  .variant-view-bulk-checkbox { margin: 0; }
 
   .controls {
     position: fixed;
-
     top: auto;
     right: auto;
     bottom: max(1px, env(safe-area-inset-bottom));
     left: 50%;
-
     gap: 3px;
     margin: 0;
     padding: 2px;
-
     background: rgba(255, 255, 255, 0.9);
-
     border: 1px solid rgba(0, 0, 0, 0.16);
     border-radius: 7px;
-
     transform: translateX(-50%);
-
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
@@ -839,6 +626,7 @@ body.is-saving .controls {
     border-radius: 5px;
     box-shadow: none;
   }
+
   .check-canvas {
     left: 10% !important;
     top: 40% !important;
@@ -847,7 +635,6 @@ body.is-saving .controls {
   }
 }
 
-/* PNG保存時のみ、下寄りにズレる分を上に引っ張り上げる */
 body.is-saving .mobile-compact-variant-label,
 body.is-saving .mobile-variant-special-label {
   padding-top: 0px !important;
@@ -877,15 +664,12 @@ body.is-saving .mobile-variant-special-label {
       </div>
     </div>
 
-    <!-- ページ切り替え用 -->
     <div id="pagination-area"></div>
-
     <div id="gallery"></div>
 
   </div>
 </div>
 
-<!-- スマホ用画像保存オーバーレイ -->
 <div id="save-overlay">
   <div id="save-overlay-message">画像を長押しして「写真に保存」を選んでください</div>
   <img id="save-overlay-img" alt="保存用コレクション画像">
@@ -893,46 +677,18 @@ body.is-saving .mobile-variant-special-label {
 </div>
 
 <script>
-/* =========================
-   バリアント表示時の行順
-========================= */
 const VARIANT_DISPLAY_ORDER = [
-  "normal",
-  "gold",
-  "gummy",
-  "galaxy",
-  "holofoil",
-  "cube",
-  "gem",
-  "quack",
-  "cheat-master",
-  "loot-hacker",
-  "bounty-hunter"
+  "normal", "gold", "gummy", "galaxy", "holofoil", "cube", "gem", "quack", "cheat-master", "loot-hacker", "bounty-hunter"
 ];
 
-/* =========================
-   スマホ版の配置区分
-========================= */
 const MOBILE_PRIMARY_VARIANTS = [
-  "normal",
-  "gold",
-  "gummy",
-  "galaxy",
-  "cheat-master",
-  "loot-hacker",
-  "bounty-hunter"
+  "normal", "gold", "gummy", "galaxy", "cheat-master", "loot-hacker", "bounty-hunter"
 ];
 
 const MOBILE_SECONDARY_VARIANTS = [
-  "holofoil",
-  "cube",
-  "gem",
-  "quack"
+  "holofoil", "cube", "gem", "quack"
 ];
 
-/* =========================
-   ページ別コレクション設定
-========================= */
 const PAGES = [
   {
     label: "C7S4",
@@ -978,9 +734,7 @@ const PAGES = [
         ]
       }
     ],
-    standalone: [
-      {type:"rockman"}
-    ]
+    standalone: [{ type: "rockman" }]
   },
   {
     label: "C7S3",
@@ -1027,39 +781,16 @@ const PAGES = [
       }
     ],
     standalone: [
-      { type: "peanut" },
-      { type: "vini" },
-      { type: "pollo" },
-      { type: "john" },
-      { type: "ironmouse" }
+      { type: "peanut" }, { type: "vini" }, { type: "pollo" }, { type: "john" }, { type: "ironmouse" }
     ]
   }
 ];
 
 let currentPageIndex = 0;
-let showUncheckedOnly = false; // 未獲得のみ表示フラグ
-let isMasterMode = false;       // マスターモード切り替えフラグ
+let showUncheckedOnly = false;
+let isMasterMode = false;
 
-function getCurrentCollection() {
-  return PAGES[currentPageIndex].collection;
-}
-
-function getCurrentStandalone() {
-  return PAGES[currentPageIndex].standalone;
-}
-
-/* =========================
-   自動サイズ調整
-========================= */
-const AUTO_FIT = {
-  minItemSize: 6,
-  maxItemSize: 240,
-  safetyMargin: 2
-};
-
-/* =========================
-   HTML要素・状態
-========================= */
+const AUTO_FIT = { minItemSize: 6, maxItemSize: 240, safetyMargin: 2 };
 const PEANUT_KEY = "special_peanut";
 const root = document.documentElement;
 const capture = document.getElementById("capture");
@@ -1070,32 +801,22 @@ const paginationArea = document.getElementById("pagination-area");
 const masterButton = document.getElementById("btn-toggle-master");
 const uncheckedButton = document.getElementById("btn-toggle-unchecked");
 const saveButton = document.getElementById("btn-save");
-const controls = document.querySelector(".controls");
 
 let layoutFrameId = null;
 
-/* =========================
-   共通処理
-========================= */
-function isMobileView() {
-  return window.matchMedia("(max-width: 768px)").matches;
-}
+function isMobileView() { return window.matchMedia("(max-width: 768px)").matches; }
 
 function getVariants(typeData) {
-  if (!Array.isArray(typeData.variants)) return [];
-  return [...new Set(typeData.variants)];
+  return Array.isArray(typeData.variants) ? [...new Set(typeData.variants)] : [];
 }
 
 function getStorageKey(type, variant) {
-  if (variant !== null) {
-    return `${type}_${variant}`;
-  }
+  if (variant !== null) return `${type}_${variant}`;
   return type === "peanut" ? PEANUT_KEY : type;
 }
 
 function getItemState(type, variant) {
-  const key = getStorageKey(type, variant);
-  const val = localStorage.getItem(key);
+  const val = localStorage.getItem(getStorageKey(type, variant));
   if (val === "true" || val === "checked") return "true";
   if (val === "master") return "master";
   return "false";
@@ -1105,45 +826,33 @@ function isItemChecked(type, variant) {
   return getItemState(type, variant) !== "false";
 }
 
-/* =========================
-   チェックマーク描画 (視認性向上改修)
-========================= */
 function drawCheckMark(canvas, isMaster = false) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  canvas.width = 200;
-  canvas.height = 200;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.width = canvas.height = 200;
+  ctx.clearRect(0, 0, 200, 200);
   ctx.save();
   ctx.scale(2, 2);
 
-  // 影の描画（ドロップシャドウで立体感と視認性を向上）
   ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
   ctx.shadowBlur = 5;
-  ctx.shadowOffsetX = 2;
-  ctx.shadowOffsetY = 2;
+  ctx.shadowOffsetX = ctx.shadowOffsetY = 2;
 
   ctx.beginPath();
   ctx.moveTo(25, 50);
   ctx.lineTo(45, 70);
   ctx.lineTo(80, 25);
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.lineCap = ctx.lineJoin = "round";
 
-  // 1. 最外枠（半透明黒線でどんな背景画像からもくっきりと浮き上がらせる）
   ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
   ctx.lineWidth = 30;
   ctx.stroke();
 
-  // 2. 中間枠（白縁）
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 20;
   ctx.stroke();
 
-  // シャドウをオフにして内側の鮮やかさを保つ
   ctx.shadowColor = "transparent";
-
-  // 3. メインカラー（通常：赤 / マスター：ゴールド・オレンジ）
   ctx.strokeStyle = isMaster ? "#ffd700" : "#ff2a2a";
   ctx.lineWidth = 12;
   ctx.stroke();
@@ -1164,20 +873,11 @@ function updateItemVisual(item, state) {
     item.classList.remove("checked", "master");
   } else {
     item.classList.add("checked");
-    if (state === "master") {
-      item.classList.add("master");
-    } else {
-      item.classList.remove("master");
-    }
-    if (canvas) {
-      drawCheckMark(canvas, state === "master");
-    }
+    item.classList.toggle("master", state === "master");
+    if (canvas) drawCheckMark(canvas, state === "master");
   }
 }
 
-/* =========================
-   アイテム生成
-========================= */
 function createCollectionItem(type, variant = null) {
   const key = getStorageKey(type, variant);
   const state = getItemState(type, variant);
@@ -1191,9 +891,7 @@ function createCollectionItem(type, variant = null) {
   if (variant !== null) item.dataset.variant = variant;
   
   image.className = "collection-image";
-  image.src = variant === null
-    ? `images/special/${type}.webp`
-    : `images/${variant}/${type}_${variant}.webp`;
+  image.src = variant === null ? `images/special/${type}.webp` : `images/${variant}/${type}_${variant}.webp`;
   image.alt = variant === null ? type : `${type} ${variant}`;
   
   const canvas = createCheckCanvas(state === "master");
@@ -1206,21 +904,9 @@ function createCollectionItem(type, variant = null) {
     let nextState;
 
     if (isMasterMode) {
-      // マスターモード時：
-      if (currentState === "true") {
-        nextState = "master"; // 通常チェック済みをマスター(黄色)に
-      } else if (currentState === "master") {
-        nextState = "true";   // マスターを通常チェック(赤)に
-      } else {
-        nextState = "master"; // 未獲得をクリック時直接マスターに
-      }
+      nextState = (currentState === "true") ? "master" : (currentState === "master" ? "true" : "master");
     } else {
-      // 通常モード時：
-      if (currentState === "true" || currentState === "master") {
-        nextState = "false";  // 解除
-      } else {
-        nextState = "true";   // 通常チェック(赤)
-      }
+      nextState = (currentState === "true" || currentState === "master") ? "false" : "true";
     }
 
     localStorage.setItem(key, nextState);
@@ -1237,50 +923,77 @@ function createCollectionItem(type, variant = null) {
   return item;
 }
 
-/* =========================
-   バリアント表示のtype列順生成 (現在ページのみ)
-========================= */
 function getVariantViewTypeOrder() {
   const types = [];
   const seenTypes = new Set();
-  for (const { types: rowTypes } of getCurrentCollection()) {
-    for (const typeData of rowTypes) {
-      if (seenTypes.has(typeData.type)) continue;
-      seenTypes.add(typeData.type);
-      types.push(typeData.type);
-    }
-  }
+  PAGES[currentPageIndex].collection.forEach(({ types: rowTypes }) => {
+    rowTypes.forEach(typeData => {
+      if (!seenTypes.has(typeData.type)) {
+        seenTypes.add(typeData.type);
+        types.push(typeData.type);
+      }
+    });
+  });
   return types;
 }
 
-/* =========================
-   バリアント表示用データ生成 (現在ページのみ)
-========================= */
 function getAllVariantGroups() {
   const groupMap = new Map();
-  for (const { types } of getCurrentCollection()) {
-    for (const typeData of types) {
-      for (const variant of getVariants(typeData)) {
+  PAGES[currentPageIndex].collection.forEach(({ types }) => {
+    types.forEach(typeData => {
+      getVariants(typeData).forEach(variant => {
         if (!groupMap.has(variant)) groupMap.set(variant, new Map());
         groupMap.get(variant).set(typeData.type, { type: typeData.type, variant });
-      }
-    }
-  }
-  const discoveredVariants = [...groupMap.keys()];
+      });
+    });
+  });
+  const discovered = [...groupMap.keys()];
   const orderedVariants = [
-    ...VARIANT_DISPLAY_ORDER.filter(variant => groupMap.has(variant)),
-    ...discoveredVariants.filter(variant => !VARIANT_DISPLAY_ORDER.includes(variant))
+    ...VARIANT_DISPLAY_ORDER.filter(v => groupMap.has(v)),
+    ...discovered.filter(v => !VARIANT_DISPLAY_ORDER.includes(v))
   ];
-  return orderedVariants.map(variant => ({
-    variant,
-    itemsByType: groupMap.get(variant)
-  }));
+  return orderedVariants.map(variant => ({ variant, itemsByType: groupMap.get(variant) }));
 }
 
-function createVariantViewPlaceholder() {
-  const placeholder = document.createElement("div");
-  placeholder.className = "variant-view-placeholder";
-  return placeholder;
+function getRenderedVariantItems(variant) {
+  return [...gallery.querySelectorAll(".item[data-variant]")].filter(item => item.dataset.variant === variant);
+}
+
+function applyBulkState(variant, nextChecked) {
+  const items = getRenderedVariantItems(variant);
+  items.forEach(item => {
+    const key = item.dataset.storageKey;
+    const currentVal = localStorage.getItem(key);
+    let targetState;
+
+    if (nextChecked) {
+      targetState = (currentVal === "true" || currentVal === "master") ? currentVal : (isMasterMode ? "master" : "true");
+    } else {
+      targetState = "false";
+    }
+
+    localStorage.setItem(key, targetState);
+    updateItemVisual(item, targetState);
+  });
+
+  if (showUncheckedOnly && nextChecked) {
+    renderView();
+  } else {
+    updateCounter();
+    updateVariantBulkCheckboxes();
+  }
+}
+
+function updateVariantBulkCheckboxes() {
+  gallery.querySelectorAll(".variant-view-bulk-checkbox").forEach(checkbox => {
+    const variant = checkbox.dataset.variant;
+    if (!variant) return;
+    const items = getRenderedVariantItems(variant);
+    const checkedCount = items.filter(item => item.classList.contains("checked")).length;
+    checkbox.checked = items.length > 0 && checkedCount === items.length;
+    checkbox.indeterminate = false;
+    checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
+  });
 }
 
 function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbox = true) {
@@ -1299,36 +1012,31 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
   if (!showBulkCheckbox) itemArea.classList.add("no-bulk-checkbox");
 
   const visibleItems = [];
-  for (const type of typeOrder) {
+  typeOrder.forEach(type => {
     const item = itemsByType.get(type);
-    if (!item) continue;
-    if (showUncheckedOnly && isItemChecked(item.type, item.variant)) continue;
-    visibleItems.push(item);
-  }
+    if (item && !(showUncheckedOnly && isItemChecked(item.type, item.variant))) {
+      visibleItems.push(item);
+    }
+  });
 
   if (showUncheckedOnly) {
+    if (visibleItems.length === 0) return null;
     itemArea.style.setProperty("--variant-view-column-count", Math.max(1, visibleItems.length));
-    for (const item of visibleItems) {
-      itemArea.appendChild(createCollectionItem(item.type, item.variant));
-    }
+    visibleItems.forEach(item => itemArea.appendChild(createCollectionItem(item.type, item.variant)));
   } else {
     itemArea.style.setProperty("--variant-view-column-count", Math.max(1, typeOrder.length));
-    for (const type of typeOrder) {
+    typeOrder.forEach(type => {
       const item = itemsByType.get(type);
       if (item) {
         itemArea.appendChild(createCollectionItem(item.type, item.variant));
       } else {
-        itemArea.appendChild(createVariantViewPlaceholder());
+        const ph = document.createElement("div");
+        ph.className = "variant-view-placeholder";
+        itemArea.appendChild(ph);
       }
-    }
+    });
   }
 
-  const itemCountInRow = visibleItems.length;
-  
-  if (showUncheckedOnly && itemCountInRow === 0) {
-    return null;
-  }
-  
   if (showBulkCheckbox) {
     const bulkCell = document.createElement("div");
     const bulkCheckbox = document.createElement("input");
@@ -1340,36 +1048,7 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
     
     bulkCheckbox.addEventListener("change", event => {
       event.stopPropagation();
-      const nextChecked = bulkCheckbox.checked;
-      const items = getRenderedVariantItems(labelText);
-      
-      for (const item of items) {
-        const key = item.dataset.storageKey;
-        const currentVal = localStorage.getItem(key);
-        let targetState;
-
-        if (nextChecked) {
-          // すでにチェックがついている場合(赤または黄色)は既存の状態を保持
-          if (currentVal === "true" || currentVal === "master") {
-            targetState = currentVal;
-          } else {
-            // 未獲得のものだけ現在のモードに応じた色を適用
-            targetState = isMasterMode ? "master" : "true";
-          }
-        } else {
-          targetState = "false";
-        }
-
-        localStorage.setItem(key, targetState);
-        updateItemVisual(item, targetState);
-      }
-
-      if (showUncheckedOnly && nextChecked) {
-        renderView();
-      } else {
-        updateCounter();
-        updateVariantBulkCheckboxes();
-      }
+      applyBulkState(labelText, bulkCheckbox.checked);
     });
     
     bulkCell.appendChild(bulkCheckbox);
@@ -1380,25 +1059,6 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
   return row;
 }
 
-function getRenderedVariantItems(variant) {
-  return [...gallery.querySelectorAll(".item[data-variant]")].filter(
-    item => item.dataset.variant === variant
-  );
-}
-
-function updateVariantBulkCheckboxes() {
-  const checkboxes = [...gallery.querySelectorAll(".variant-view-bulk-checkbox")];
-  for (const checkbox of checkboxes) {
-    const variant = checkbox.dataset.variant;
-    if (!variant) continue;
-    const items = getRenderedVariantItems(variant);
-    const checkedCount = items.filter(item => item.classList.contains("checked")).length;
-    checkbox.checked = items.length > 0 && checkedCount === items.length;
-    checkbox.indeterminate = false;
-    checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
-  }
-}
-
 function createMobileVariantBulkCheckbox(variant) {
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -1407,61 +1067,26 @@ function createMobileVariantBulkCheckbox(variant) {
   checkbox.setAttribute("aria-label", `${variant}をすべてチェック`);
   checkbox.addEventListener("change", event => {
     event.stopPropagation();
-    const nextChecked = checkbox.checked;
-    const items = getRenderedVariantItems(variant);
-
-    for (const item of items) {
-      const key = item.dataset.storageKey;
-      const currentVal = localStorage.getItem(key);
-      let targetState;
-
-      if (nextChecked) {
-        // すでにチェックがついている場合(赤または黄色)は既存の状態を保持
-        if (currentVal === "true" || currentVal === "master") {
-          targetState = currentVal;
-        } else {
-          // 未獲得のものだけ現在のモードに応じた色を適用
-          targetState = isMasterMode ? "master" : "true";
-        }
-      } else {
-        targetState = "false";
-      }
-
-      localStorage.setItem(key, targetState);
-      updateItemVisual(item, targetState);
-    }
-
-    if (showUncheckedOnly && nextChecked) {
-      renderView();
-    } else {
-      updateCounter();
-      updateVariantBulkCheckboxes();
-    }
+    applyBulkState(variant, checkbox.checked);
   });
   return checkbox;
 }
 
-/* =========================
-   スマホ版バリアント配置 (現在ページのみ)
-========================= */
 function renderMobileVariantView() {
   const typeOrder = getVariantViewTypeOrder();
   const variantsByType = new Map();
-  for (const { types } of getCurrentCollection()) {
-    for (const typeData of types) {
-      variantsByType.set(typeData.type, new Set(getVariants(typeData)));
-    }
-  }
+  PAGES[currentPageIndex].collection.forEach(({ types }) => {
+    types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
+  });
   
-  let columnLimit = 10;
-  if (typeOrder.length > 0 && typeOrder.length < 20) {
-    columnLimit = Math.ceil(typeOrder.length / 2);
-  }
-  
+  const columnLimit = (typeOrder.length > 0 && typeOrder.length < 20) ? Math.ceil(typeOrder.length / 2) : 10;
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
   
   function createCompactVariantGroup(variant, matchingTypes, columnLimit, primary = false) {
+    const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
+    if (showUncheckedOnly && visibleTypes.length === 0) return null;
+
     const group = document.createElement("div");
     const header = document.createElement("div");
     const label = document.createElement("div");
@@ -1476,21 +1101,10 @@ function renderMobileVariantView() {
     control.className = "mobile-compact-variant-control";
     body.className = "mobile-compact-variant-body";
     items.className = "mobile-compact-variant-items";
-    
-    const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
 
-    if (primary) {
-      items.classList.add("mobile-primary-variant-items");
-      items.style.setProperty(
-        "--mobile-primary-column-count",
-        showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit
-      );
-    } else {
-      items.style.setProperty(
-        "--mobile-secondary-column-count",
-        showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit
-      );
-    }
+    const colVar = primary ? "--mobile-primary-column-count" : "--mobile-secondary-column-count";
+    if (primary) items.classList.add("mobile-primary-variant-items");
+    items.style.setProperty(colVar, showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
     
     const bulkCheckbox = createMobileVariantBulkCheckbox(variant);
     control.appendChild(bulkCheckbox);
@@ -1501,14 +1115,7 @@ function renderMobileVariantView() {
     });
     
     header.appendChild(label);
-    const itemCount = visibleTypes.length;
-    for (const type of visibleTypes) {
-      items.appendChild(createCollectionItem(type, variant));
-    }
-
-    if (showUncheckedOnly && itemCount === 0) {
-      return null;
-    }
+    visibleTypes.forEach(type => items.appendChild(createCollectionItem(type, variant)));
 
     body.append(items, control);
     group.append(header, body);
@@ -1517,39 +1124,38 @@ function renderMobileVariantView() {
   
   const primaryArea = document.createElement("div");
   primaryArea.className = "mobile-primary-variants";
-  for (const variant of MOBILE_PRIMARY_VARIANTS) {
-    const matchingTypes = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
-    if (matchingTypes.length === 0) continue;
-    const group = createCompactVariantGroup(variant, matchingTypes, columnLimit, true);
-    if (group) primaryArea.appendChild(group);
-  }
-  if (primaryArea.children.length > 0) {
-    layout.appendChild(primaryArea);
-  }
+  MOBILE_PRIMARY_VARIANTS.forEach(variant => {
+    const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
+    if (matching.length) {
+      const g = createCompactVariantGroup(variant, matching, columnLimit, true);
+      if (g) primaryArea.appendChild(g);
+    }
+  });
+  if (primaryArea.children.length) layout.appendChild(primaryArea);
   
   const secondaryArea = document.createElement("div");
   secondaryArea.className = "mobile-secondary-variants";
-  for (const variant of MOBILE_SECONDARY_VARIANTS) {
-    const matchingTypes = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
-    if (matchingTypes.length === 0) continue;
-    const group = createCompactVariantGroup(variant, matchingTypes, columnLimit, false);
-    if (group) secondaryArea.appendChild(group);
-  }
-  if (secondaryArea.children.length > 0) {
-    layout.appendChild(secondaryArea);
-  }
+  MOBILE_SECONDARY_VARIANTS.forEach(variant => {
+    const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
+    if (matching.length) {
+      const g = createCompactVariantGroup(variant, matching, columnLimit, false);
+      if (g) secondaryArea.appendChild(g);
+    }
+  });
+  if (secondaryArea.children.length) layout.appendChild(secondaryArea);
 
-  const standalones = getCurrentStandalone();
-  if (standalones.length > 0) {
+  const standalones = PAGES[currentPageIndex].standalone;
+  if (standalones.length) {
     const specialItems = document.createElement("div");
     specialItems.className = "mobile-variant-special-items";
 
     let specialCount = 0;
-    for (const { type } of standalones) {
-      if (showUncheckedOnly && isItemChecked(type, null)) continue;
-      specialItems.appendChild(createCollectionItem(type, null));
-      specialCount++;
-    }
+    standalones.forEach(({ type }) => {
+      if (!(showUncheckedOnly && isItemChecked(type, null))) {
+        specialItems.appendChild(createCollectionItem(type, null));
+        specialCount++;
+      }
+    });
 
     if (!showUncheckedOnly || specialCount > 0) {
       const special = document.createElement("div");
@@ -1570,75 +1176,54 @@ function renderMobileVariantView() {
   gallery.appendChild(layout);
 }
 
-/* =========================
-   PC版バリアント表示 (現在ページのみ)
-========================= */
 function renderUncheckedFlatVariantView() {
   const items = [];
+  PAGES[currentPageIndex].collection.forEach(({ types }) => {
+    types.forEach(typeData => {
+      getVariants(typeData).forEach(variant => {
+        if (!isItemChecked(typeData.type, variant)) items.push({ type: typeData.type, variant });
+      });
+    });
+  });
 
-  for (const { types } of getCurrentCollection()) {
-    for (const typeData of types) {
-      for (const variant of getVariants(typeData)) {
-        if (isItemChecked(typeData.type, variant)) continue;
-        items.push({ type: typeData.type, variant });
-      }
-    }
-  }
-
-  for (const { type } of getCurrentStandalone()) {
-    if (isItemChecked(type, null)) continue;
-    items.push({ type, variant: null });
-  }
+  PAGES[currentPageIndex].standalone.forEach(({ type }) => {
+    if (!isItemChecked(type, null)) items.push({ type, variant: null });
+  });
 
   if (items.length === 0) return;
 
   const container = document.createElement("div");
   container.className = "unchecked-flat-items";
   container.style.setProperty("--unchecked-flat-column-count", Math.max(1, items.length));
-
-  for (const item of items) {
-    container.appendChild(createCollectionItem(item.type, item.variant));
-  }
-
+  items.forEach(item => container.appendChild(createCollectionItem(item.type, item.variant)));
   gallery.appendChild(container);
 
   requestAnimationFrame(() => {
     const captureRect = capture.getBoundingClientRect();
     const headerRect = document.getElementById("header-area")?.getBoundingClientRect();
-    const controlsRect = document.getElementById("controls")?.getBoundingClientRect();
+    const controlsRect = document.querySelector(".controls")?.getBoundingClientRect();
     const paginationRect = paginationArea?.getBoundingClientRect();
 
-    const fixedHeight =
-      (headerRect?.height || 0) +
-      (controlsRect?.height || 0) +
-      (paginationRect?.height || 0) +
-      30;
+    const fixedHeight = (headerRect?.height || 0) + (controlsRect?.height || 0) + (paginationRect?.height || 0) + 30;
     const availableWidth = Math.max(1, captureRect.width - 16);
     const availableHeight = Math.max(1, captureRect.height - fixedHeight);
 
-    let bestColumns = 1;
-    let bestSize = 0;
+    let bestColumns = 1, bestSize = 0;
 
     for (let columns = 1; columns <= items.length; columns++) {
       const rows = Math.ceil(items.length / columns);
-      const widthSize = (availableWidth - (columns - 1) * 2) / columns;
-      const heightSize = (availableHeight - (rows - 1) * 2) / rows;
-      const size = Math.min(widthSize, heightSize);
+      const size = Math.min((availableWidth - (columns - 1) * 2) / columns, (availableHeight - (rows - 1) * 2) / rows);
 
       const variantCountByType = new Map();
-      for (const item of items) {
-        variantCountByType.set(item.type, (variantCountByType.get(item.type) || 0) + 1);
-      }
+      items.forEach(item => variantCountByType.set(item.type, (variantCountByType.get(item.type) || 0) + 1));
       const maxVariantCount = Math.max(1, ...variantCountByType.values());
       const remainder = columns % maxVariantCount;
-      const groupingScore = remainder === 0 ? 2 : (remainder === 1 || remainder === maxVariantCount - 1 ? 1 : 0);
+      const groupingScore = (remainder === 0) ? 2 : ((remainder === 1 || remainder === maxVariantCount - 1) ? 1 : 0);
+      
       const bestRemainder = bestColumns % maxVariantCount;
-      const bestGroupingScore = bestRemainder === 0 ? 2 : (bestRemainder === 1 || bestRemainder === maxVariantCount - 1 ? 1 : 0);
+      const bestGroupingScore = (bestRemainder === 0) ? 2 : ((bestRemainder === 1 || bestRemainder === maxVariantCount - 1) ? 1 : 0);
 
-      if (
-        size > bestSize + 0.01 ||
-        (Math.abs(size - bestSize) <= 0.01 && groupingScore > bestGroupingScore)
-      ) {
+      if (size > bestSize + 0.01 || (Math.abs(size - bestSize) <= 0.01 && groupingScore > bestGroupingScore)) {
         bestSize = size;
         bestColumns = columns;
       }
@@ -1654,19 +1239,18 @@ function renderVariantView() {
     renderUncheckedFlatVariantView();
     return;
   }
-
   if (isMobileView()) {
     renderMobileVariantView();
     return;
   }
 
   const typeOrder = getVariantViewTypeOrder();
-  for (const { variant, itemsByType } of getAllVariantGroups()) {
+  getAllVariantGroups().forEach(({ variant, itemsByType }) => {
     const row = createVariantViewRow(variant, typeOrder, itemsByType);
     if (row) gallery.appendChild(row);
-  }
+  });
 
-  const standalones = getCurrentStandalone();
+  const standalones = PAGES[currentPageIndex].standalone;
   if (standalones.length > 0) {
     const standaloneTypeOrder = standalones.map(({ type }) => type);
     const standaloneMap = new Map(standalones.map(({ type }) => [type, { type, variant: null }]));
@@ -1675,27 +1259,19 @@ function renderVariantView() {
   }
 }
 
-/* =========================
-   ページネーション描画
-========================= */
 function renderPagination() {
   paginationArea.replaceChildren();
   PAGES.forEach((page, index) => {
     const btn = document.createElement("button");
-    btn.className = "page-btn";
-    if (index === currentPageIndex) {
-      btn.classList.add("active");
-    }
+    btn.className = `page-btn${index === currentPageIndex ? " active" : ""}`;
     btn.textContent = page.label;
     btn.addEventListener("click", () => {
       if (currentPageIndex !== index) {
         currentPageIndex = index;
-
         if (currentPageIndex !== 0 && showUncheckedOnly) {
           showUncheckedOnly = false;
           uncheckedButton.classList.remove("active");
         }
-
         renderPagination();
         renderView();
       }
@@ -1704,31 +1280,18 @@ function renderPagination() {
   });
 }
 
-/* =========================
-   全アイテムキー取得 (現在ページのみ)
-========================= */
 function getCurrentPageCollectionKeys() {
   const keys = new Set();
   const page = PAGES[currentPageIndex];
-  
   page.collection.forEach(row => {
     row.types.forEach(typeData => {
-      getVariants(typeData).forEach(variant => {
-        keys.add(getStorageKey(typeData.type, variant));
-      });
+      getVariants(typeData).forEach(variant => keys.add(getStorageKey(typeData.type, variant)));
     });
   });
-  
-  page.standalone.forEach(item => {
-    keys.add(getStorageKey(item.type, null));
-  });
-  
+  page.standalone.forEach(item => keys.add(getStorageKey(item.type, null)));
   return [...keys];
 }
 
-/* =========================
-   カウンター更新 (現在ページのみ)
-========================= */
 function updateCounter() {
   const keys = getCurrentPageCollectionKeys();
   const checkedCount = keys.reduce((count, key) => {
@@ -1739,17 +1302,12 @@ function updateCounter() {
   document.getElementById("total-count").textContent = keys.length;
 }
 
-/* =========================
-   表示全体の描画
-========================= */
 function renderView() {
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
-  
   document.body.classList.remove("page-0", "page-1");
   document.body.classList.add(`page-${currentPageIndex}`);
 
-  // C7S4 (index 0) でのみボタンを表示（非表示時も領域を維持）
   if (uncheckedButton) {
     uncheckedButton.style.visibility = (currentPageIndex === 0) ? "visible" : "hidden";
   }
@@ -1760,48 +1318,29 @@ function renderView() {
   scheduleAutoLayout();
 }
 
-/* =========================
-   使用可能サイズ取得と調整処理
-========================= */
 function getAvailableSize() {
   const style = getComputedStyle(capture);
-  const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-  const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-
   return {
-    width: capture.clientWidth - paddingX - AUTO_FIT.safetyMargin,
-    height: capture.clientHeight - paddingY - AUTO_FIT.safetyMargin
+    width: capture.clientWidth - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) - AUTO_FIT.safetyMargin,
+    height: capture.clientHeight - (parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)) - AUTO_FIT.safetyMargin
   };
 }
 
 function contentFits() {
   const available = getAvailableSize();
-  const galleryRect = gallery.getBoundingClientRect();
-  const contentRect = collectionContent.getBoundingClientRect();
-
-  // 幅は画像の横幅(#gallery)、高さはヘッダー等も含めた全体の高さ(#collection-content)で判定
   return (
-    galleryRect.width <= available.width &&
-    contentRect.height <= available.height
+    gallery.getBoundingClientRect().width <= available.width &&
+    collectionContent.getBoundingClientRect().height <= available.height
   );
 }
 
 function findLargestItemSize() {
-  // スマホは横幅(約370px)に10列収めるため12pxまで縮小を許可
-  // PCは米粒化を防ぐため50px未満にならないように設定
   const minSize = isMobileView() ? 12 : 50;
-  const maxSize = AUTO_FIT.maxItemSize;
-
-  let low = minSize;
-  let high = maxSize;
+  let low = minSize, high = AUTO_FIT.maxItemSize;
   for (let i = 0; i < 14; i++) {
     const middle = (low + high) / 2;
     root.style.setProperty("--item-size", `${middle}px`);
-    if (contentFits()) {
-      low = middle;
-    } else {
-      high = middle;
-    }
+    if (contentFits()) low = middle; else high = middle;
   }
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
@@ -1811,26 +1350,18 @@ function applyAutoLayout() {
 }
 
 function scheduleAutoLayout() {
-  if (layoutFrameId !== null) {
-    cancelAnimationFrame(layoutFrameId);
-  }
+  if (layoutFrameId !== null) cancelAnimationFrame(layoutFrameId);
   layoutFrameId = requestAnimationFrame(() => {
     layoutFrameId = null;
     applyAutoLayout();
   });
 }
 
-/* =========================
-   マスターモード切り替え処理
-========================= */
 function toggleMasterMode() {
   isMasterMode = !isMasterMode;
   masterButton.classList.toggle("active", isMasterMode);
 }
 
-/* =========================
-   PNG保存処理
-========================= */
 function toggleUncheckedOnly() {
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
@@ -1859,29 +1390,13 @@ function cropControlSpace(sourceCanvas) {
   const canvasScaleX = sourceCanvas.width / captureRect.width;
   const canvasScaleY = sourceCanvas.height / captureRect.height;
 
-  // 上端：TOTALヘッダーの位置から正確に開始（ズレを削除）
-  const left = Math.max(
-    0,
-    Math.round((contentRect.left - captureRect.left) * canvasScaleX)
-  );
-  const top = Math.max(
-    0,
-    Math.round((contentRect.top - captureRect.top) * canvasScaleY)
-  );
+  const left = Math.max(0, Math.round((contentRect.left - captureRect.left) * canvasScaleX));
+  const top = Math.max(0, Math.round((contentRect.top - captureRect.top) * canvasScaleY));
+  const right = Math.min(sourceCanvas.width, Math.round((contentRect.right - captureRect.left) * canvasScaleX));
 
-  const right = Math.min(
-    sourceCanvas.width,
-    Math.round((contentRect.right - captureRect.left) * canvasScaleX)
-  );
-
-  // 下端：ギャラリーの一番下の要素（実コンテンツ）の下端を取得してピッタリ切り抜く
   const lastElement = gallery.lastElementChild;
   const bottomBoundary = lastElement ? lastElement.getBoundingClientRect().bottom : contentRect.bottom;
-
-  const bottom = Math.min(
-    sourceCanvas.height,
-    Math.round((bottomBoundary - captureRect.top) * canvasScaleY)
-  );
+  const bottom = Math.min(sourceCanvas.height, Math.round((bottomBoundary - captureRect.top) * canvasScaleY));
 
   const croppedWidth = Math.max(1, right - left);
   const croppedHeight = Math.max(1, bottom - top);
@@ -1893,24 +1408,13 @@ function cropControlSpace(sourceCanvas) {
   const ctx = croppedCanvas.getContext("2d");
   if (!ctx) return sourceCanvas;
 
-  ctx.drawImage(
-    sourceCanvas,
-    left, top, croppedWidth, croppedHeight,
-    0, 0, croppedWidth, croppedHeight
-  );
-
+  ctx.drawImage(sourceCanvas, left, top, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
   return croppedCanvas;
 }
 
 function canvasToPNGBlob(canvas) {
   return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => {
-      if (blob) {
-        resolve(blob);
-      } else {
-        reject(new Error("PNG画像を作成できませんでした。"));
-      }
-    }, "image/png");
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("PNG画像を作成できませんでした。")), "image/png");
   });
 }
 
@@ -1923,7 +1427,7 @@ function downloadPNGBlob(blob, fileName) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  window.setTimeout(() => { URL.revokeObjectURL(objectURL); }, 60000);
+  window.setTimeout(() => URL.revokeObjectURL(objectURL), 60000);
 }
 
 let savingPNG = false;
@@ -1947,7 +1451,6 @@ async function savePNG() {
   savingPNG = true;
   
   const originalButtonText = saveButton.textContent;
-  
   saveButton.disabled = true;
   saveButton.textContent = "作成中";
   
@@ -1958,9 +1461,7 @@ async function savePNG() {
     
     try {
       applyAutoLayout();
-      await new Promise(resolve => {
-        requestAnimationFrame(() => { requestAnimationFrame(resolve); });
-      });
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       fullCanvas = await html2canvas(capture, {
         useCORS: true,
         backgroundColor: null,
@@ -1977,16 +1478,13 @@ async function savePNG() {
     const pngBlob = await canvasToPNGBlob(saveCanvas);
     
     if (isMobileView()) {
-      if (currentObjectURL) {
-        URL.revokeObjectURL(currentObjectURL);
-      }
+      if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
       currentObjectURL = URL.createObjectURL(pngBlob);
       saveOverlayImg.src = currentObjectURL;
       saveOverlay.classList.add("active");
     } else {
       downloadPNGBlob(pngBlob, `collection_page${currentPageIndex + 1}.png`);
     }
-    
   } catch (error) {
     console.error(error);
     alert("画像を保存できませんでした。ページを再読み込みして、もう一度お試しください。");
@@ -1997,9 +1495,7 @@ async function savePNG() {
   }
 }
 
-/* =========================
-   イベント
-========================= */
+/* イベントリスナー */
 masterButton.addEventListener("click", toggleMasterMode);
 uncheckedButton.addEventListener("click", toggleUncheckedOnly);
 saveButton.addEventListener("click", savePNG);
@@ -2017,13 +1513,10 @@ function handleViewportChange() {
 window.addEventListener("resize", handleViewportChange, { passive: true });
 window.addEventListener("orientationchange", handleViewportChange, { passive: true });
 if ("ResizeObserver" in window) {
-  const resizeObserver = new ResizeObserver(scheduleAutoLayout);
-  resizeObserver.observe(capture);
+  new ResizeObserver(scheduleAutoLayout).observe(capture);
 }
 
-/* =========================
-   初期表示
-========================= */
+/* 初期表示 */
 renderPagination();
 renderView();
 </script>
