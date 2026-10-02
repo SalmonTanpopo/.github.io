@@ -76,7 +76,7 @@ body.page-0 #capture {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   position: relative;
 }
 
@@ -399,6 +399,7 @@ button {
   #collection-content {
     width: max-content;
     max-width: 100%;
+    justify-content: flex-start;
   }
   #capture {
     position: relative;
@@ -552,7 +553,7 @@ button {
 
   .variant-view-bulk-checkbox { margin: 0; }
 
-  /* 下部コントロールを通常フローの独立コンテナとして再配置 */
+  /* 下部コントロールを通常フローの独立コンテナとして配置 */
   .controls {
     position: relative;
     top: auto;
@@ -1314,15 +1315,20 @@ function getAvailableSize() {
 
   const headerArea = document.getElementById("header-area");
   const headerHeight = headerArea ? headerArea.getBoundingClientRect().height : 0;
+  const headerStyle = headerArea ? getComputedStyle(headerArea) : null;
+  const headerMarginBottom = headerStyle ? parseFloat(headerStyle.marginBottom) || 0 : 0;
 
   const controlsArea = document.querySelector(".controls");
   let controlsHeight = 0;
+  let controlsMarginTop = 0;
   if (controlsArea && getComputedStyle(controlsArea).display !== "none") {
     controlsHeight = controlsArea.getBoundingClientRect().height;
+    const controlsStyle = getComputedStyle(controlsArea);
+    controlsMarginTop = parseFloat(controlsStyle.marginTop) || 0;
   }
 
   const availWidth = captureWidth - paddingLeft - paddingRight - AUTO_FIT.safetyMargin;
-  const availHeight = captureHeight - paddingTop - paddingBottom - headerHeight - controlsHeight - 6 - AUTO_FIT.safetyMargin;
+  const availHeight = captureHeight - paddingTop - paddingBottom - headerHeight - headerMarginBottom - controlsHeight - controlsMarginTop - 2 - AUTO_FIT.safetyMargin;
 
   return {
     width: Math.max(10, availWidth),
@@ -1351,6 +1357,7 @@ function findLargestItemSizePC() {
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
+/* 要件①・②: 最大画像数を持つvariantを基準にダイレクト算出（被り・回転・ページ切替を完璧に吸収） */
 function findLargestItemSizeMobile() {
   const groups = gallery.querySelectorAll(".mobile-compact-variant-group");
   if (groups.length === 0) return;
@@ -1374,10 +1381,12 @@ function findLargestItemSizeMobile() {
   const gapItem = 1;
   const gapBlock = 1;
   const headerH = 13;
+  const borderH = 2; // 上下 border (1px + 1px)
   const controlW = 32;
   const controlGap = 2;
+  const groupBorderW = 2; // 左右 border (1px + 1px)
 
-  const fixedWidthPadding = controlW + controlGap; // 34px
+  const fixedWidthPadding = controlW + controlGap + groupBorderW; // 36px
   const M = counts.length;
 
   let bestCols = maxItems;
@@ -1390,7 +1399,7 @@ function findLargestItemSizeMobile() {
     }
 
     const Sw = (W_avail - fixedWidthPadding - (cols - 1) * gapItem) / cols;
-    const fixedHeight = M * headerH + (totalRows - M) * gapItem + (M - 1) * gapBlock;
+    const fixedHeight = M * (headerH + borderH) + (M - 1) * gapBlock + (totalRows - M) * gapItem;
     const Sh = (H_avail - fixedHeight) / totalRows;
 
     const S = Math.min(Sw, Sh);
@@ -1415,11 +1424,14 @@ function applyAutoLayout() {
   }
 }
 
+/* ページ切り替え時・描画確定を確実に待って計算実行するよう改善 */
 function scheduleAutoLayout() {
   if (layoutFrameId !== null) cancelAnimationFrame(layoutFrameId);
   layoutFrameId = requestAnimationFrame(() => {
-    layoutFrameId = null;
-    applyAutoLayout();
+    layoutFrameId = requestAnimationFrame(() => {
+      layoutFrameId = null;
+      applyAutoLayout();
+    });
   });
 }
 
