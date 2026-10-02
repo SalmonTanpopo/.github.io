@@ -19,6 +19,7 @@
   --gap-block: 5px;
   --variant-bulk-column-width: 22px;
   --variant-label-column-width: 66px;
+  --mobile-column-count: 7;
 }
 
 * { box-sizing: border-box; }
@@ -246,20 +247,15 @@ body.is-saving .controls {
 }
 
 .mobile-variant-special-items {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(var(--mobile-column-count), var(--item-size));
   gap: var(--gap-item);
 }
 
 .mobile-compact-variant-items {
   display: grid;
-  grid-template-columns: repeat(var(--mobile-secondary-column-count, 7), var(--item-size));
+  grid-template-columns: repeat(var(--mobile-column-count), var(--item-size));
   gap: var(--gap-item);
-}
-
-.mobile-primary-variant-items {
-  grid-template-columns: repeat(var(--mobile-primary-column-count, 10), var(--item-size));
 }
 
 /* アイテム・チェック領域 */
@@ -493,7 +489,7 @@ button {
 
   .mobile-variant-special {
     position: relative;
-    width: var(--item-size);
+    width: max-content;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -669,7 +665,7 @@ body.is-saving .mobile-variant-special-label {
         <button id="btn-toggle-master" type="button">マスター</button>
         <button id="btn-toggle-exclude" type="button" style="display: none;">未獲得から除外</button>
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
-        <button id="btn-save" type="button">PNG画像保存</button>
+        <button id="btn-save" type="button">画像保存</button>
       </div>
     </div>
 
@@ -687,14 +683,6 @@ body.is-saving .mobile-variant-special-label {
 <script>
 const VARIANT_DISPLAY_ORDER = [
   "normal", "gold", "gummy", "galaxy", "holofoil", "cube", "gem", "quack", "cheat-master", "loot-hacker", "bounty-hunter","trick-or-treat"
-];
-
-const MOBILE_PRIMARY_VARIANTS = [
-  "normal", "gold", "gummy", "galaxy", "cheat-master", "loot-hacker", "bounty-hunter","trick-or-treat"
-];
-
-const MOBILE_SECONDARY_VARIANTS = [
-  "holofoil", "cube", "gem", "quack"
 ];
 
 const PAGES = [
@@ -1116,11 +1104,10 @@ function renderMobileVariantView() {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
-  const columnLimit = Math.ceil(typeOrder.length / (typeOrder.length <= 20 ? 2 : 3));
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
-  
-  function createCompactVariantGroup(variant, matchingTypes, columnLimit, primary = false) {
+
+  function createCompactVariantGroup(variant, matchingTypes) {
     const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
     if (showUncheckedOnly && visibleTypes.length === 0) return null;
 
@@ -1139,10 +1126,6 @@ function renderMobileVariantView() {
     body.className = "mobile-compact-variant-body";
     items.className = "mobile-compact-variant-items";
 
-    const colVar = primary ? "--mobile-primary-column-count" : "--mobile-secondary-column-count";
-    if (primary) items.classList.add("mobile-primary-variant-items");
-    items.style.setProperty(colVar, showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
-    
     const bulkCheckbox = createMobileVariantBulkCheckbox(variant);
     control.appendChild(bulkCheckbox);
     control.addEventListener("click", event => {
@@ -1159,32 +1142,25 @@ function renderMobileVariantView() {
     return group;
   }
   
-  const primaryArea = document.createElement("div");
-  primaryArea.className = "mobile-primary-variants";
-  MOBILE_PRIMARY_VARIANTS.forEach(variant => {
+  // 表示順にvariantグループを生成
+  const orderedVariants = [
+    ...VARIANT_DISPLAY_ORDER.filter(v => Array.from(variantsByType.values()).some(s => s.has(v))),
+    ...Array.from(variantsByType.values()).flatMap(s => Array.from(s)).filter(v => !VARIANT_DISPLAY_ORDER.includes(v))
+  ];
+  const uniqueOrderedVariants = [...new Set(orderedVariants)];
+
+  uniqueOrderedVariants.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching, columnLimit, true);
-      if (g) primaryArea.appendChild(g);
+      const g = createCompactVariantGroup(variant, matching);
+      if (g) layout.appendChild(g);
     }
   });
-  if (primaryArea.children.length) layout.appendChild(primaryArea);
-  
-  const secondaryArea = document.createElement("div");
-  secondaryArea.className = "mobile-secondary-variants";
-  MOBILE_SECONDARY_VARIANTS.forEach(variant => {
-    const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
-    if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching, columnLimit, false);
-      if (g) secondaryArea.appendChild(g);
-    }
-  });
-  if (secondaryArea.children.length) layout.appendChild(secondaryArea);
 
   const standalones = PAGES[currentPageIndex].standalone;
   if (standalones.length) {
     const specialItems = document.createElement("div");
-    specialItems.className = "mobile-variant-special-items";
+    specialItems.className = "mobile-variant-special-items mobile-compact-variant-items";
 
     let specialCount = 0;
     standalones.forEach(({ type }) => {
@@ -1236,19 +1212,12 @@ function renderUncheckedFlatVariantView() {
   gallery.appendChild(container);
 
   requestAnimationFrame(() => {
-    const captureRect = capture.getBoundingClientRect();
-    const headerRect = document.getElementById("header-area")?.getBoundingClientRect();
-    const controlsRect = document.querySelector(".controls")?.getBoundingClientRect();
-
-    const fixedHeight = (headerRect?.height || 0) + (controlsRect?.height || 0) + 30;
-    const availableWidth = Math.max(1, captureRect.width - 16);
-    const availableHeight = Math.max(1, captureRect.height - fixedHeight);
-
+    const available = getAvailableSize();
     let bestColumns = 1, bestSize = 0;
 
     for (let columns = 1; columns <= items.length; columns++) {
       const rows = Math.ceil(items.length / columns);
-      const size = Math.min((availableWidth - (columns - 1) * 2) / columns, (availableHeight - (rows - 1) * 2) / rows);
+      const size = Math.min((available.width - (columns - 1) * 2) / columns, (available.height - (rows - 1) * 2) / rows);
 
       const variantCountByType = new Map();
       items.forEach(item => variantCountByType.set(item.type, (variantCountByType.get(item.type) || 0) + 1));
@@ -1320,7 +1289,6 @@ function renderPagination() {
       }
     });
 
-    // 0番目(C7S4)をTOTALの左に、1番目(C7S3)をTOTALの右に振分け
     if (index === 0 && paginationLeft) {
       paginationLeft.appendChild(btn);
     } else if (index === 1 && paginationRight) {
@@ -1376,24 +1344,46 @@ function renderView() {
   scheduleAutoLayout();
 }
 
+/* 取りえるサイズ（上部TOTAL領域と下部ボタン群領域を除いた画像を配置する領域）の取得 */
 function getAvailableSize() {
   const style = getComputedStyle(capture);
+  const header = document.getElementById("header-area");
+  const headerHeight = header ? header.getBoundingClientRect().height : 0;
+
+  const paddingTop = parseFloat(style.paddingTop) || 0;
+  const paddingBottom = parseFloat(style.paddingBottom) || 0;
+  const paddingLeft = parseFloat(style.paddingLeft) || 0;
+  const paddingRight = parseFloat(style.paddingRight) || 0;
+
+  let controlsHeight = 0;
+  if (isMobileView()) {
+    const controls = document.querySelector(".controls");
+    if (controls && getComputedStyle(controls).display !== "none") {
+      controlsHeight = controls.getBoundingClientRect().height + 4;
+    }
+  }
+
+  const availWidth = capture.clientWidth - paddingLeft - paddingRight - AUTO_FIT.safetyMargin;
+  const availHeight = capture.clientHeight - paddingTop - paddingBottom - headerHeight - controlsHeight - AUTO_FIT.safetyMargin;
+
   return {
-    width: capture.clientWidth - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) - AUTO_FIT.safetyMargin,
-    height: capture.clientHeight - (parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)) - AUTO_FIT.safetyMargin
+    width: Math.max(10, availWidth),
+    height: Math.max(10, availHeight)
   };
 }
 
 function contentFits() {
   const available = getAvailableSize();
+  const galleryRect = gallery.getBoundingClientRect();
+
   return (
-    gallery.getBoundingClientRect().width <= available.width &&
-    collectionContent.getBoundingClientRect().height <= available.height
+    galleryRect.width <= available.width + 0.5 &&
+    galleryRect.height <= available.height + 0.5
   );
 }
 
-function findLargestItemSize() {
-  const minSize = isMobileView() ? 12 : 50;
+function findLargestItemSizePC() {
+  const minSize = 50;
   let low = minSize, high = AUTO_FIT.maxItemSize;
   for (let i = 0; i < 14; i++) {
     const middle = (low + high) / 2;
@@ -1403,8 +1393,60 @@ function findLargestItemSize() {
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
+/* スマホ版：最大画像数を持つvariantを基準に画像サイズが最大化する最適列数・行数と画像サイズを求める */
+function findLargestItemSizeMobile() {
+  const groups = gallery.querySelectorAll(".mobile-compact-variant-group");
+  if (groups.length === 0) return;
+
+  let maxItems = 0;
+  groups.forEach(group => {
+    const itemCount = group.querySelectorAll(".item").length;
+    if (itemCount > maxItems) maxItems = itemCount;
+  });
+
+  if (maxItems === 0) return;
+
+  let bestColumns = 1;
+  let bestSize = 12;
+
+  const minSize = 12;
+  const maxSize = AUTO_FIT.maxItemSize;
+
+  // 1列から最大画像数(maxItems)まで探索
+  for (let cols = 1; cols <= maxItems; cols++) {
+    root.style.setProperty("--mobile-column-count", cols);
+    
+    let low = minSize, high = maxSize;
+    let validSize = 0;
+
+    for (let i = 0; i < 10; i++) {
+      const mid = (low + high) / 2;
+      root.style.setProperty("--item-size", `${mid}px`);
+
+      if (contentFits()) {
+        validSize = mid;
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    if (validSize > bestSize + 0.05) {
+      bestSize = validSize;
+      bestColumns = cols;
+    }
+  }
+
+  root.style.setProperty("--mobile-column-count", bestColumns);
+  root.style.setProperty("--item-size", `${Math.max(minSize, Math.floor(bestSize * 10) / 10)}px`);
+}
+
 function applyAutoLayout() {
-  root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
+  if (isMobileView() && !showUncheckedOnly) {
+    findLargestItemSizeMobile();
+  } else {
+    root.style.setProperty("--item-size", `${findLargestItemSizePC()}px`);
+  }
 }
 
 function scheduleAutoLayout() {
