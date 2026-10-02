@@ -19,7 +19,6 @@
   --gap-block: 5px;
   --variant-bulk-column-width: 22px;
   --variant-label-column-width: 66px;
-  --mobile-column-count: 7;
 }
 
 * { box-sizing: border-box; }
@@ -72,12 +71,10 @@ body.page-0 #capture {
 
 #collection-content {
   width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  position: relative;
+  justify-content: flex-start;
 }
 
 /* ヘッダー & カウンター & ページネーション統合領域 */
@@ -89,7 +86,6 @@ body.page-0 #capture {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  flex: 0 0 auto;
 }
 
 #counter {
@@ -138,7 +134,6 @@ body.is-saving .controls {
 /* ギャラリー & バリアントレイアウト */
 #gallery {
   width: 100%;
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -233,7 +228,8 @@ body.is-saving .controls {
 }
 
 /* スマホ用特殊配置非表示定義 */
-.mobile-variant-layout, .mobile-compact-variant-group {
+.mobile-variant-layout, .mobile-primary-variants, .mobile-secondary-variants,
+.mobile-compact-variant-group, .mobile-variant-special {
   display: none;
 }
 
@@ -243,22 +239,27 @@ body.is-saving .controls {
   justify-content: center;
 }
 
-.mobile-compact-variant-group {
+.mobile-variant-special, .mobile-compact-variant-group {
   background: rgba(255, 255, 255, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 4px;
-  width: max-content;
+}
+
+.mobile-variant-special-items {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-  padding: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap-item);
 }
 
 .mobile-compact-variant-items {
   display: grid;
-  grid-template-columns: repeat(var(--mobile-column-count), var(--item-size));
+  grid-template-columns: repeat(var(--mobile-secondary-column-count, 7), var(--item-size));
   gap: var(--gap-item);
+}
+
+.mobile-primary-variant-items {
+  grid-template-columns: repeat(var(--mobile-primary-column-count, 10), var(--item-size));
 }
 
 /* アイテム・チェック領域 */
@@ -292,15 +293,18 @@ body.is-saving .controls {
 
 .item.checked .check-canvas { display: block; }
 
-/* ボタン類（コンテナ） */
+/* ボタン類 */
 .controls {
   z-index: 10;
+  position: absolute;
+  top: 50%;
+  right: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
   flex-wrap: nowrap;
   gap: 15px;
   margin: 0;
+  transform: translateY(-50%);
 }
 
 button {
@@ -399,7 +403,6 @@ button {
   #collection-content {
     width: max-content;
     max-width: 100%;
-    justify-content: flex-start;
   }
   #capture {
     position: relative;
@@ -407,9 +410,8 @@ button {
   }
   #header-area { position: static; }
   .controls {
-    position: absolute;
-    top: 0px;
-    right: 0px;
+    top: 18px;
+    right: 20px;
     transform: none;
   }
   .variant-view-row.pc-top-label-variant {
@@ -439,36 +441,32 @@ button {
   :root {
     --gap-item: 1px;
     --gap-block: 1px;
+    --mobile-controls-reserve: 35px;
   }
 
   #capture {
-    padding: 2px 2px calc(2px + env(safe-area-inset-bottom));
+    padding: 1px 2px calc(var(--mobile-controls-reserve) + env(safe-area-inset-bottom));
     overflow: hidden;
     align-items: center;
     justify-content: flex-start;
   }
 
-  body.is-saving #capture { padding: 2px; }
+  body.is-saving #capture { padding: 1px 2px; }
 
-  #collection-content {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+  body.is-variant-view #collection-content {
+    width: auto;
+    min-width: 0;
+    justify-content: flex-start;
   }
 
   #header-area {
     margin-bottom: 2px;
     gap: 6px;
   }
-
   #counter {
     font-size: 16px;
     -webkit-text-stroke: 1px #000000;
   }
-
   .page-btn {
     min-width: 50px;
     height: 24px;
@@ -491,6 +489,59 @@ button {
     flex-direction: column;
     align-items: center;
     gap: 1px;
+  }
+
+  .mobile-variant-special {
+    position: relative;
+    width: var(--item-size);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+  }
+
+  .mobile-variant-special-header {
+    width: 100%;
+    height: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 1px;
+  }
+
+  .mobile-variant-special-label {
+    width: max-content;
+    padding: 1px 4px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 3px;
+    font-family: "Anton", "Impact", "Arial Black", sans-serif;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
+    -webkit-text-stroke: 0.35px #000000;
+    pointer-events: none;
+  }
+
+  .mobile-primary-variants, .mobile-secondary-variants {
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  .mobile-compact-variant-group {
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
   }
 
   .mobile-compact-variant-header {
@@ -553,21 +604,19 @@ button {
 
   .variant-view-bulk-checkbox { margin: 0; }
 
-  /* 下部コントロールを通常フローの独立コンテナとして配置 */
   .controls {
-    position: relative;
+    position: fixed;
     top: auto;
     right: auto;
-    bottom: auto;
-    left: auto;
-    transform: none;
-    flex: 0 0 auto;
+    bottom: max(1px, env(safe-area-inset-bottom));
+    left: 50%;
     gap: 3px;
-    margin: 2px 0 0 0;
-    padding: 2px 4px;
+    margin: 0;
+    padding: 2px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.16);
     border-radius: 7px;
+    transform: translateX(-50%);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
@@ -588,7 +637,8 @@ button {
   }
 }
 
-body.is-saving .mobile-compact-variant-label {
+body.is-saving .mobile-compact-variant-label,
+body.is-saving .mobile-variant-special-label {
   padding-top: 0px !important;
   padding-bottom: 3px !important;
   line-height: 0.9 !important;
@@ -614,17 +664,16 @@ body.is-saving .mobile-compact-variant-label {
 
       <!-- TOTALの右側ボタン配置域 -->
       <div id="pagination-right"></div>
+
+      <div class="controls">
+        <button id="btn-toggle-master" type="button">マスター</button>
+        <button id="btn-toggle-exclude" type="button" style="display: none;">未獲得から除外</button>
+        <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
+        <button id="btn-save" type="button">PNG画像保存</button>
+      </div>
     </div>
 
     <div id="gallery"></div>
-
-    <!-- 独立した下部ボタン群コンテナ -->
-    <div class="controls">
-      <button id="btn-toggle-master" type="button">マスター</button>
-      <button id="btn-toggle-exclude" type="button" style="display: none;">未獲得から除外</button>
-      <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
-      <button id="btn-save" type="button">画像保存</button>
-    </div>
 
   </div>
 </div>
@@ -638,6 +687,14 @@ body.is-saving .mobile-compact-variant-label {
 <script>
 const VARIANT_DISPLAY_ORDER = [
   "normal", "gold", "gummy", "galaxy", "holofoil", "cube", "gem", "quack", "cheat-master", "loot-hacker", "bounty-hunter","trick-or-treat"
+];
+
+const MOBILE_PRIMARY_VARIANTS = [
+  "normal", "gold", "gummy", "galaxy", "cheat-master", "loot-hacker", "bounty-hunter","trick-or-treat"
+];
+
+const MOBILE_SECONDARY_VARIANTS = [
+  "holofoil", "cube", "gem", "quack"
 ];
 
 const PAGES = [
@@ -1059,10 +1116,11 @@ function renderMobileVariantView() {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
+  const columnLimit = Math.ceil(typeOrder.length / (typeOrder.length <= 20 ? 2 : 3));
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
-
-  function createCompactVariantGroup(variant, matchingTypes) {
+  
+  function createCompactVariantGroup(variant, matchingTypes, columnLimit, primary = false) {
     const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
     if (showUncheckedOnly && visibleTypes.length === 0) return null;
 
@@ -1081,6 +1139,10 @@ function renderMobileVariantView() {
     body.className = "mobile-compact-variant-body";
     items.className = "mobile-compact-variant-items";
 
+    const colVar = primary ? "--mobile-primary-column-count" : "--mobile-secondary-column-count";
+    if (primary) items.classList.add("mobile-primary-variant-items");
+    items.style.setProperty(colVar, showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
+    
     const bulkCheckbox = createMobileVariantBulkCheckbox(variant);
     control.appendChild(bulkCheckbox);
     control.addEventListener("click", event => {
@@ -1097,50 +1159,54 @@ function renderMobileVariantView() {
     return group;
   }
   
-  const orderedVariants = [
-    ...VARIANT_DISPLAY_ORDER.filter(v => Array.from(variantsByType.values()).some(s => s.has(v))),
-    ...Array.from(variantsByType.values()).flatMap(s => Array.from(s)).filter(v => !VARIANT_DISPLAY_ORDER.includes(v))
-  ];
-  const uniqueOrderedVariants = [...new Set(orderedVariants)];
-
-  uniqueOrderedVariants.forEach(variant => {
+  const primaryArea = document.createElement("div");
+  primaryArea.className = "mobile-primary-variants";
+  MOBILE_PRIMARY_VARIANTS.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching);
-      if (g) layout.appendChild(g);
+      const g = createCompactVariantGroup(variant, matching, columnLimit, true);
+      if (g) primaryArea.appendChild(g);
     }
   });
+  if (primaryArea.children.length) layout.appendChild(primaryArea);
+  
+  const secondaryArea = document.createElement("div");
+  secondaryArea.className = "mobile-secondary-variants";
+  MOBILE_SECONDARY_VARIANTS.forEach(variant => {
+    const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
+    if (matching.length) {
+      const g = createCompactVariantGroup(variant, matching, columnLimit, false);
+      if (g) secondaryArea.appendChild(g);
+    }
+  });
+  if (secondaryArea.children.length) layout.appendChild(secondaryArea);
 
   const standalones = PAGES[currentPageIndex].standalone;
   if (standalones.length) {
-    const visibleStandalones = standalones.filter(({ type }) => !(showUncheckedOnly && isItemChecked(type, null)));
+    const specialItems = document.createElement("div");
+    specialItems.className = "mobile-variant-special-items";
 
-    if (!showUncheckedOnly || visibleStandalones.length > 0) {
-      const group = document.createElement("div");
-      const header = document.createElement("div");
-      const label = document.createElement("div");
-      const body = document.createElement("div");
-      const items = document.createElement("div");
-      const dummyControl = document.createElement("div");
+    let specialCount = 0;
+    standalones.forEach(({ type }) => {
+      if (!(showUncheckedOnly && isItemChecked(type, null))) {
+        specialItems.appendChild(createCollectionItem(type, null));
+        specialCount++;
+      }
+    });
 
-      group.className = "mobile-compact-variant-group mobile-variant-special";
-      header.className = "mobile-compact-variant-header";
-      label.className = "mobile-compact-variant-label";
-      label.textContent = "special";
+    if (!showUncheckedOnly || specialCount > 0) {
+      const special = document.createElement("div");
+      const specialHeader = document.createElement("div");
+      const specialLabel = document.createElement("div");
 
-      body.className = "mobile-compact-variant-body";
-      items.className = "mobile-compact-variant-items";
-      
-      dummyControl.className = "mobile-compact-variant-control";
-      dummyControl.style.visibility = "hidden";
-      dummyControl.style.pointerEvents = "none";
+      special.className = "mobile-variant-special mobile-compact-variant-group";
+      specialHeader.className = "mobile-variant-special-header";
+      specialLabel.className = "mobile-variant-special-label";
+      specialLabel.textContent = "special";
 
-      header.appendChild(label);
-      visibleStandalones.forEach(({ type }) => items.appendChild(createCollectionItem(type, null)));
-
-      body.append(items, dummyControl);
-      group.append(header, body);
-      layout.appendChild(group);
+      specialHeader.appendChild(specialLabel);
+      special.append(specialHeader, specialItems);
+      layout.appendChild(special);
     }
   }
   
@@ -1170,12 +1236,19 @@ function renderUncheckedFlatVariantView() {
   gallery.appendChild(container);
 
   requestAnimationFrame(() => {
-    const available = getAvailableSize();
+    const captureRect = capture.getBoundingClientRect();
+    const headerRect = document.getElementById("header-area")?.getBoundingClientRect();
+    const controlsRect = document.querySelector(".controls")?.getBoundingClientRect();
+
+    const fixedHeight = (headerRect?.height || 0) + (controlsRect?.height || 0) + 30;
+    const availableWidth = Math.max(1, captureRect.width - 16);
+    const availableHeight = Math.max(1, captureRect.height - fixedHeight);
+
     let bestColumns = 1, bestSize = 0;
 
     for (let columns = 1; columns <= items.length; columns++) {
       const rows = Math.ceil(items.length / columns);
-      const size = Math.min((available.width - (columns - 1) * 2) / columns, (available.height - (rows - 1) * 2) / rows);
+      const size = Math.min((availableWidth - (columns - 1) * 2) / columns, (availableHeight - (rows - 1) * 2) / rows);
 
       const variantCountByType = new Map();
       items.forEach(item => variantCountByType.set(item.type, (variantCountByType.get(item.type) || 0) + 1));
@@ -1247,6 +1320,7 @@ function renderPagination() {
       }
     });
 
+    // 0番目(C7S4)をTOTALの左に、1番目(C7S3)をTOTALの右に振分け
     if (index === 0 && paginationLeft) {
       paginationLeft.appendChild(btn);
     } else if (index === 1 && paginationRight) {
@@ -1302,52 +1376,24 @@ function renderView() {
   scheduleAutoLayout();
 }
 
-/* 要件③: 上部TOTAL含む部分と下部ボタン群を除いた領域の取りえるサイズ計測 */
 function getAvailableSize() {
   const style = getComputedStyle(capture);
-  const captureWidth = capture.clientWidth;
-  const captureHeight = capture.clientHeight;
-
-  const paddingTop = parseFloat(style.paddingTop) || 0;
-  const paddingBottom = parseFloat(style.paddingBottom) || 0;
-  const paddingLeft = parseFloat(style.paddingLeft) || 0;
-  const paddingRight = parseFloat(style.paddingRight) || 0;
-
-  const headerArea = document.getElementById("header-area");
-  const headerHeight = headerArea ? headerArea.getBoundingClientRect().height : 0;
-  const headerStyle = headerArea ? getComputedStyle(headerArea) : null;
-  const headerMarginBottom = headerStyle ? parseFloat(headerStyle.marginBottom) || 0 : 0;
-
-  const controlsArea = document.querySelector(".controls");
-  let controlsHeight = 0;
-  let controlsMarginTop = 0;
-  if (controlsArea && getComputedStyle(controlsArea).display !== "none") {
-    controlsHeight = controlsArea.getBoundingClientRect().height;
-    const controlsStyle = getComputedStyle(controlsArea);
-    controlsMarginTop = parseFloat(controlsStyle.marginTop) || 0;
-  }
-
-  const availWidth = captureWidth - paddingLeft - paddingRight - AUTO_FIT.safetyMargin;
-  const availHeight = captureHeight - paddingTop - paddingBottom - headerHeight - headerMarginBottom - controlsHeight - controlsMarginTop - 2 - AUTO_FIT.safetyMargin;
-
   return {
-    width: Math.max(10, availWidth),
-    height: Math.max(10, availHeight)
+    width: capture.clientWidth - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) - AUTO_FIT.safetyMargin,
+    height: capture.clientHeight - (parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)) - AUTO_FIT.safetyMargin
   };
 }
 
 function contentFits() {
   const available = getAvailableSize();
-  const galleryRect = gallery.getBoundingClientRect();
-
   return (
-    galleryRect.width <= available.width + 0.5 &&
-    galleryRect.height <= available.height + 0.5
+    gallery.getBoundingClientRect().width <= available.width &&
+    collectionContent.getBoundingClientRect().height <= available.height
   );
 }
 
-function findLargestItemSizePC() {
-  const minSize = 50;
+function findLargestItemSize() {
+  const minSize = isMobileView() ? 12 : 50;
   let low = minSize, high = AUTO_FIT.maxItemSize;
   for (let i = 0; i < 14; i++) {
     const middle = (low + high) / 2;
@@ -1357,81 +1403,15 @@ function findLargestItemSizePC() {
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
-/* 要件①・②: 最大画像数を持つvariantを基準にダイレクト算出（被り・回転・ページ切替を完璧に吸収） */
-function findLargestItemSizeMobile() {
-  const groups = gallery.querySelectorAll(".mobile-compact-variant-group");
-  if (groups.length === 0) return;
-
-  const counts = [];
-  let maxItems = 0;
-  groups.forEach(group => {
-    const items = group.querySelectorAll(".item");
-    if (items.length > 0) {
-      counts.push(items.length);
-      if (items.length > maxItems) maxItems = items.length;
-    }
-  });
-
-  if (maxItems === 0 || counts.length === 0) return;
-
-  const avail = getAvailableSize();
-  const W_avail = avail.width;
-  const H_avail = avail.height;
-
-  const gapItem = 1;
-  const gapBlock = 1;
-  const headerH = 13;
-  const borderH = 2; // 上下 border (1px + 1px)
-  const controlW = 32;
-  const controlGap = 2;
-  const groupBorderW = 2; // 左右 border (1px + 1px)
-
-  const fixedWidthPadding = controlW + controlGap + groupBorderW; // 36px
-  const M = counts.length;
-
-  let bestCols = maxItems;
-  let maxItemSize = 0;
-
-  for (let cols = 1; cols <= maxItems; cols++) {
-    let totalRows = 0;
-    for (let i = 0; i < M; i++) {
-      totalRows += Math.ceil(counts[i] / cols);
-    }
-
-    const Sw = (W_avail - fixedWidthPadding - (cols - 1) * gapItem) / cols;
-    const fixedHeight = M * (headerH + borderH) + (M - 1) * gapBlock + (totalRows - M) * gapItem;
-    const Sh = (H_avail - fixedHeight) / totalRows;
-
-    const S = Math.min(Sw, Sh);
-
-    if (S > maxItemSize) {
-      maxItemSize = S;
-      bestCols = cols;
-    }
-  }
-
-  const finalSize = Math.max(10, Math.min(AUTO_FIT.maxItemSize, Math.floor(maxItemSize * 10) / 10));
-
-  root.style.setProperty("--mobile-column-count", bestCols);
-  root.style.setProperty("--item-size", `${finalSize}px`);
-}
-
 function applyAutoLayout() {
-  if (isMobileView() && !showUncheckedOnly) {
-    findLargestItemSizeMobile();
-  } else {
-    root.style.setProperty("--item-size", `${findLargestItemSizePC()}px`);
-  }
+  root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
 }
 
-/* ページ切り替え時・描画確定を確実に待って計算実行するよう改善 */
 function scheduleAutoLayout() {
   if (layoutFrameId !== null) cancelAnimationFrame(layoutFrameId);
   layoutFrameId = requestAnimationFrame(() => {
-    layoutFrameId = requestAnimationFrame(() => {
-      layoutFrameId = null;
-      applyAutoLayout();
-    });
+    layoutFrameId = null;
+    applyAutoLayout();
   });
 }
 
