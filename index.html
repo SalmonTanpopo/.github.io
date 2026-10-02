@@ -660,7 +660,7 @@ body.is-saving .mobile-variant-special-label {
 
       <div class="controls">
         <button id="btn-toggle-master" type="button">マスター</button>
-        <button id="btn-toggle-exclude" type="button" class="active" style="display: none;">未獲得から除外</button>
+        <button id="btn-toggle-exclude" type="button" style="display: none;">未獲得から除外</button>
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
         <button id="btn-save" type="button">PNG画像保存</button>
       </div>
@@ -919,16 +919,25 @@ function createCollectionItem(type, variant = null) {
 
     if (showUncheckedOnly) {
       if (isExcludeMode) {
-        // ON: 従来通り未獲得から除外（赤チェック）
+        // ON: 未獲得から除外（赤チェック）
         nextState = (currentState === "true" || currentState === "master") ? "false" : "true";
       } else {
         // OFF: 青チェックを付ける（すでに青チェックなら解除）
         nextState = (currentState === "blue") ? "false" : "blue";
       }
-    } else if (isMasterMode) {
-      nextState = (currentState === "true") ? "master" : (currentState === "master" ? "true" : "master");
     } else {
-      nextState = (currentState === "true" || currentState === "master" || currentState === "blue") ? "false" : "true";
+      // ③ 未獲得のみじゃないモードでの遷移処理
+      if (isMasterMode) {
+        // マスターモードON時：青状態、未選択、赤状態から全て黄チェックへ
+        nextState = (currentState === "master") ? "true" : "master";
+      } else {
+        // マスターモードOFF時：青状態からは赤チェックへ（逆戻り不可）、それ以外はトグル
+        if (currentState === "blue") {
+          nextState = "true";
+        } else {
+          nextState = (currentState === "true" || currentState === "master") ? "false" : "true";
+        }
+      }
     }
 
     localStorage.setItem(key, nextState);
@@ -1297,6 +1306,12 @@ function renderPagination() {
         if (currentPageIndex !== 0 && showUncheckedOnly) {
           showUncheckedOnly = false;
           uncheckedButton.classList.remove("active");
+          
+          // ② 未獲得から除外をfalseに
+          if (isExcludeMode) {
+            isExcludeMode = false;
+            excludeButton.classList.remove("active");
+          }
         }
         renderPagination();
         renderView();
@@ -1406,6 +1421,21 @@ function toggleExcludeMode() {
 function toggleUncheckedOnly() {
   showUncheckedOnly = !showUncheckedOnly;
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
+
+  if (showUncheckedOnly) {
+    // ① 未獲得のみモードに遷移したらマスター状態をfalseに
+    if (isMasterMode) {
+      isMasterMode = false;
+      masterButton.classList.remove("active");
+    }
+  } else {
+    // ② 未獲得のみじゃないモードに遷移したら未獲得から除外をfalseに
+    if (isExcludeMode) {
+      isExcludeMode = false;
+      excludeButton.classList.remove("active");
+    }
+  }
+
   renderView();
 }
 
