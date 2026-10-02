@@ -1067,18 +1067,38 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
 
   if (showUncheckedOnly) {
     if (visibleItems.length === 0) return null;
-    visibleItems.forEach(item => itemArea.appendChild(createCollectionItem(item.type, item.variant)));
   } else {
+    // 通常表示では空き位置も含めてtypeOrderを維持する。
     typeOrder.forEach(type => {
       const item = itemsByType.get(type);
       if (item) {
-        itemArea.appendChild(createCollectionItem(item.type, item.variant));
+        visibleItems.push(item);
       } else {
-        const ph = document.createElement("div");
-        ph.className = "variant-view-placeholder";
-        itemArea.appendChild(ph);
+        visibleItems.push({ type: null, variant: null, placeholder: true });
       }
     });
+  }
+
+  // 行ごとの個数をできるだけ均等にする。
+  const rowCount = Math.max(1, Math.ceil(visibleItems.length / Math.max(1, columnCount)));
+  const baseCount = Math.floor(visibleItems.length / rowCount);
+  const extraCount = visibleItems.length % rowCount;
+  let index = 0;
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const countThisRow = baseCount + (rowIndex < extraCount ? 1 : 0);
+    for (let colIndex = 0; colIndex < countThisRow; colIndex++) {
+      const item = visibleItems[index++];
+      const cell = document.createElement("div");
+      cell.className = item.placeholder ? "variant-view-placeholder" : "variant-view-cell";
+      cell.style.gridColumn = String(colIndex + 1);
+      cell.style.gridRow = String(rowIndex + 1);
+
+      if (!item.placeholder) {
+        cell.appendChild(createCollectionItem(item.type, item.variant));
+      }
+      itemArea.appendChild(cell);
+    }
   }
 
   if (showBulkCheckbox) {
@@ -1402,80 +1422,47 @@ function getMaxVariantImageCount() {
   return maxCount;
 }
 
-function getDynamicVariantColumnCount(maxCount = getMaxVariantImageCount()) {
+function getDynamicVariantLayout(maxCount = getMaxVariantImageCount()) {
   const available = getAvailableSize();
   const gap = parseFloat(getComputedStyle(root).getPropertyValue("--gap-item")) || 1;
   const bulkWidth = isMobileView() ? 32 : (parseFloat(getComputedStyle(root).getPropertyValue("--variant-bulk-column-width")) || 22);
   const labelWidth = isMobileView() ? 0 : (parseFloat(getComputedStyle(root).getPropertyValue("--variant-label-column-width")) || 66);
   const sideGap = isMobileView() ? 2 : 3;
   const maxColumnsByWidth = Math.max(1, Math.floor((available.width - labelWidth - bulkWidth - sideGap * 2 + gap) / (AUTO_FIT.minItemSize + gap)));
-  const upper = Math.max(1, Math.min(maxCount, maxColumnsByWidth));
 
-  // まず「最大variantの画像数」を基準に候補を全部調べ、
-  // 画面内に収まる中で画像サイズが最大になる列数を選ぶ。
-  let bestColumns = 1;
-  let bestSize = -Infinity;
+  const variantCounts = getAllVariantGroups().map(({ itemsByType }) => itemsByType.size);
+  const largestCount = Math.max(1, maxCount, ...variantCounts);
+  let best = { rows: 1, columns: largestCount, size: -Infinity };
+  const headerHeight = document.getElementById("header-area")?.getBoundingClientRect().height || 0;
+  const gapBlock = parseFloat(getComputedStyle(root).getPropertyValue("--gap-block")) || 1;
 
-  for (let columns = 1; columns <= upper; columns++) {
+  // 最大variantの個数を何行に分けるかを候補にする。
+  // 各行の個数は必ず均等化する（例: 24個 -> 8,8,8 / 25個 -> 9,8,8）。
+  for (let rows = 1; rows <= largestCount; rows++) {
+    const columns = Math.ceil(largestCount / rows);
+    if (columns > maxColumnsByWidth) continue;
+
     const widthForItems = available.width - labelWidth - bulkWidth - sideGap * 2;
     const widthSize = (widthForItems - (columns - 1) * gap) / columns;
     if (widthSize < AUTO_FIT.minItemSize) continue;
 
-    // 高さ側は実際のvariant群を使って評価する。
-    const variantCounts = getAllVariantGroups().map(({ itemsByType }) => {
-      let count = 0;
-      itemsByType.forEach(() => count++);
-      return count;
-    });
-    const counts = variantCounts.length ? variantCounts : [0];
-    const totalRows = counts.reduce((sum, count) => sum + Math.max(1, Math.ceil(count / columns)), 0);
-    const headerHeight = document.getElementById("header-area")?.getBoundingClientRect().height || 0;
-    const gapBlock = parseFloat(getComputedStyle(root).getPropertyValue("--gap-block")) || 1;
-    const itemGap = gap;
-    let fixedHeight = isMobileView() ? counts.length * 13 : counts.length * 24;
-    let groupGaps = Math.max(0, counts.length - 1) * gapBlock;
-
-    // SPECIAL は通常のvariant列とは別枠なので、その分も高さに含める。
-    if (isMobileView()) {
-      const specialCount = PAGES[currentPageIndex].standalone.length;
-      if (specialCount > 0) {
-        fixedHeight += 13;
-        groupGaps += gapBlock;
-        const specialColumns = Math.max(1, Math.floor((available.width - 4 + itemGap) / (AUTO_FIT.minItemSize + itemGap)));
-        fixedHeight += Math.ceil(specialCount / specialColumns) * 0;
-      }
-    }
-
-    const galleryGaps = groupGaps;
-    const heightForItems = (available.height - headerHeight - fixedHeight - galleryGaps - 8) / Math.max(1, totalRows);
+    const actualRows = variantCounts.reduce((sum, count) => {
+      return sum + Math.ceil(count / columns);
+    }, 0);
+    const groupGaps = Math.max(0, variantCounts.length - 1) * gapBlock;
+    const fixedHeight = isMobileView() ? variantCounts.length * 13 : variantCounts.length * 24;
+    const heightForItems = (available.height - headerHeight - fixedHeight - groupGaps - 8) / Math.max(1, actualRows);
     const size = Math.min(widthSize, heightForItems);
 
-    if (size > bestSize + 0.01 || (Math.abs(size - bestSize) <= 0.01 && columns > bestColumns)) {
-      bestSize = size;
-      bestColumns = columns;
+    if (size > best.size + 0.01 || (Math.abs(size - best.size) <= 0.01 && rows < best.rows)) {
+      best = { rows, columns, size };
     }
   }
-
-  return Math.max(1, bestColumns);
+  return best;
 }
 
-function contentFits() {
-  const available = getAvailableSize();
-  return (
-    gallery.getBoundingClientRect().width <= available.width + 1 &&
-    collectionContent.getBoundingClientRect().height <= available.height + 1
-  );
-}
-
-function findLargestItemSize() {
-  const minSize = isMobileView() ? 12 : 50;
-  let low = minSize, high = AUTO_FIT.maxItemSize;
-  for (let i = 0; i < 14; i++) {
-    const middle = (low + high) / 2;
-    root.style.setProperty("--item-size", `${middle}px`);
-    if (contentFits()) low = middle; else high = middle;
-  }
-  return Math.max(minSize, Math.floor(low * 10) / 10);
+function getDynamicVariantColumnCount(maxCount = getMaxVariantImageCount()) {
+  return getDynamicVariantLayout(maxCount).columns;
 }
 
 function rebuildVariantColumns() {
