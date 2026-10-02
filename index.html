@@ -85,7 +85,7 @@ body.page-0 #capture {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 #counter {
@@ -96,12 +96,12 @@ body.page-0 #capture {
   -webkit-text-stroke: 1.5px #000000;
 }
 
-/* ページネーション（同一行内に配置） */
-#pagination-area {
+/* TOTAL左右のページネーションボタン容器 */
+#pagination-left,
+#pagination-right {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
 }
 
 .page-btn {
@@ -125,7 +125,8 @@ body.page-0 #capture {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
-body.is-saving #pagination-area,
+body.is-saving #pagination-left,
+body.is-saving #pagination-right,
 body.is-saving .controls {
   display: none;
 }
@@ -460,18 +461,17 @@ button {
 
   #header-area {
     margin-bottom: 2px;
-    gap: 8px;
+    gap: 6px;
   }
   #counter {
     font-size: 16px;
     -webkit-text-stroke: 1px #000000;
   }
-  #pagination-area { margin-bottom: 0; }
   .page-btn {
-    min-width: 55px;
-    height: 25px;
+    min-width: 50px;
+    height: 24px;
     font-size: 11px;
-    padding: 0 8px;
+    padding: 0 6px;
   }
 
   body.is-variant-view #gallery {
@@ -652,7 +652,8 @@ body.is-saving .mobile-variant-special-label {
   <div id="collection-content">
 
     <div id="header-area">
-      <div id="pagination-area"></div>
+      <!-- TOTALの左側ボタン配置域 -->
+      <div id="pagination-left"></div>
       
       <div id="counter">
         TOTAL:
@@ -660,6 +661,9 @@ body.is-saving .mobile-variant-special-label {
         /
         <span id="total-count">0</span>
       </div>
+
+      <!-- TOTALの右側ボタン配置域 -->
+      <div id="pagination-right"></div>
 
       <div class="controls">
         <button id="btn-toggle-master" type="button">マスター</button>
@@ -805,7 +809,8 @@ const root = document.documentElement;
 const capture = document.getElementById("capture");
 const collectionContent = document.getElementById("collection-content");
 const gallery = document.getElementById("gallery");
-const paginationArea = document.getElementById("pagination-area");
+const paginationLeft = document.getElementById("pagination-left");
+const paginationRight = document.getElementById("pagination-right");
 
 const masterButton = document.getElementById("btn-toggle-master");
 const excludeButton = document.getElementById("btn-toggle-exclude");
@@ -1291,7 +1296,9 @@ function renderVariantView() {
 }
 
 function renderPagination() {
-  paginationArea.replaceChildren();
+  if (paginationLeft) paginationLeft.replaceChildren();
+  if (paginationRight) paginationRight.replaceChildren();
+
   PAGES.forEach((page, index) => {
     const btn = document.createElement("button");
     btn.className = `page-btn${index === currentPageIndex ? " active" : ""}`;
@@ -1312,7 +1319,13 @@ function renderPagination() {
         renderView();
       }
     });
-    paginationArea.appendChild(btn);
+
+    // 0番目(C7S4)をTOTALの左に、1番目(C7S3)をTOTALの右に振分け
+    if (index === 0 && paginationLeft) {
+      paginationLeft.appendChild(btn);
+    } else if (index === 1 && paginationRight) {
+      paginationRight.appendChild(btn);
+    }
   });
 }
 
