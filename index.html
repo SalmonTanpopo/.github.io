@@ -327,7 +327,8 @@ button {
   font-family: "Noto Sans JP", sans-serif;
 }
 
-#btn-toggle-unchecked.active {
+#btn-toggle-unchecked.active,
+#btn-toggle-exclude.active {
   background: #ff5d04;
   color: #ffffff;
   border-color: #ffffff;
@@ -659,6 +660,7 @@ body.is-saving .mobile-variant-special-label {
 
       <div class="controls">
         <button id="btn-toggle-master" type="button">マスター</button>
+        <button id="btn-toggle-exclude" type="button" class="active" style="display: none;">未獲得から除外</button>
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
         <button id="btn-save" type="button">PNG画像保存</button>
       </div>
@@ -793,6 +795,7 @@ const PAGES = [
 let currentPageIndex = 0;
 let showUncheckedOnly = false;
 let isMasterMode = false;
+let isExcludeMode = true; // 「未獲得から除外」ボタンの状態
 
 const AUTO_FIT = { minItemSize: 6, maxItemSize: 240, safetyMargin: 2 };
 const PEANUT_KEY = "special_peanut";
@@ -803,6 +806,7 @@ const gallery = document.getElementById("gallery");
 const paginationArea = document.getElementById("pagination-area");
 
 const masterButton = document.getElementById("btn-toggle-master");
+const excludeButton = document.getElementById("btn-toggle-exclude");
 const uncheckedButton = document.getElementById("btn-toggle-unchecked");
 const saveButton = document.getElementById("btn-save");
 
@@ -823,14 +827,16 @@ function getItemState(type, variant) {
   const val = localStorage.getItem(getStorageKey(type, variant));
   if (val === "true" || val === "checked") return "true";
   if (val === "master") return "master";
+  if (val === "blue") return "blue";
   return "false";
 }
 
 function isItemChecked(type, variant) {
-  return getItemState(type, variant) !== "false";
+  const state = getItemState(type, variant);
+  return state === "true" || state === "master";
 }
 
-function drawCheckMark(canvas, isMaster = false) {
+function drawCheckMark(canvas, state = "true") {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   canvas.width = canvas.height = 200;
@@ -857,28 +863,32 @@ function drawCheckMark(canvas, isMaster = false) {
   ctx.stroke();
 
   ctx.shadowColor = "transparent";
-  ctx.strokeStyle = isMaster ? "#ffd700" : "#ff2a2a";
+  let strokeColor = "#ff2a2a"; // 赤チェック
+  if (state === "master") strokeColor = "#ffd700"; // 金チェック
+  else if (state === "blue") strokeColor = "#007bff"; // 青チェック
+  ctx.strokeStyle = strokeColor;
   ctx.lineWidth = 12;
   ctx.stroke();
 
   ctx.restore();
 }
 
-function createCheckCanvas(isMaster = false) {
+function createCheckCanvas(state = "true") {
   const canvas = document.createElement("canvas");
   canvas.className = "check-canvas";
-  drawCheckMark(canvas, isMaster);
+  drawCheckMark(canvas, state);
   return canvas;
 }
 
 function updateItemVisual(item, state) {
   const canvas = item.querySelector(".check-canvas");
   if (state === "false") {
-    item.classList.remove("checked", "master");
+    item.classList.remove("checked", "master", "blue");
   } else {
     item.classList.add("checked");
     item.classList.toggle("master", state === "master");
-    if (canvas) drawCheckMark(canvas, state === "master");
+    item.classList.toggle("blue", state === "blue");
+    if (canvas) drawCheckMark(canvas, state);
   }
 }
 
@@ -898,7 +908,7 @@ function createCollectionItem(type, variant = null) {
   image.src = variant === null ? `images/special/${type}.webp` : `images/${variant}/${type}_${variant}.webp`;
   image.alt = variant === null ? type : `${type} ${variant}`;
   
-  const canvas = createCheckCanvas(state === "master");
+  const canvas = createCheckCanvas(state);
   item.append(image, canvas);
 
   updateItemVisual(item, state);
@@ -907,16 +917,24 @@ function createCollectionItem(type, variant = null) {
     const currentState = getItemState(type, variant);
     let nextState;
 
-    if (isMasterMode) {
+    if (showUncheckedOnly) {
+      if (isExcludeMode) {
+        // ON: 従来通り未獲得から除外（赤チェック）
+        nextState = (currentState === "true" || currentState === "master") ? "false" : "true";
+      } else {
+        // OFF: 青チェックを付ける（すでに青チェックなら解除）
+        nextState = (currentState === "blue") ? "false" : "blue";
+      }
+    } else if (isMasterMode) {
       nextState = (currentState === "true") ? "master" : (currentState === "master" ? "true" : "master");
     } else {
-      nextState = (currentState === "true" || currentState === "master") ? "false" : "true";
+      nextState = (currentState === "true" || currentState === "master" || currentState === "blue") ? "false" : "true";
     }
 
     localStorage.setItem(key, nextState);
     updateItemVisual(item, nextState);
 
-    if (showUncheckedOnly && nextState !== "false") {
+    if (showUncheckedOnly && isExcludeMode && nextState !== "false") {
       renderView();
     } else {
       updateCounter();
@@ -971,7 +989,11 @@ function applyBulkState(variant, nextChecked) {
     let targetState;
 
     if (nextChecked) {
-      targetState = (currentVal === "true" || currentVal === "master") ? currentVal : (isMasterMode ? "master" : "true");
+      if (showUncheckedOnly) {
+        targetState = isExcludeMode ? "true" : "blue";
+      } else {
+        targetState = (currentVal === "true" || currentVal === "master") ? currentVal : (isMasterMode ? "master" : "true");
+      }
     } else {
       targetState = "false";
     }
@@ -980,7 +1002,7 @@ function applyBulkState(variant, nextChecked) {
     updateItemVisual(item, targetState);
   });
 
-  if (showUncheckedOnly && nextChecked) {
+  if (showUncheckedOnly && nextChecked && isExcludeMode) {
     renderView();
   } else {
     updateCounter();
@@ -1084,13 +1106,6 @@ function renderMobileVariantView() {
   });
   
   const columnLimit = (typeOrder.length > 0 && typeOrder.length < 24) ? Math.ceil(typeOrder.length / 2) : 12;
-  // let columnLimit;
-
-  // if (typeOrder.length <= 20) {
-  //   columnLimit = Math.ceil(typeOrder.length / 2);
-  // } else {
-  //   columnLimit = Math.ceil(typeOrder.length / 3);
-  // }
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
   
@@ -1323,6 +1338,16 @@ function renderView() {
     uncheckedButton.style.visibility = (currentPageIndex === 0) ? "visible" : "hidden";
   }
 
+  // ボタン表示制御（未獲得のみモード時：マスター廃止／除外ボタン表示）
+  if (showUncheckedOnly) {
+    masterButton.style.display = "none";
+    excludeButton.style.display = "inline-flex";
+    excludeButton.classList.toggle("active", isExcludeMode);
+  } else {
+    masterButton.style.display = "inline-flex";
+    excludeButton.style.display = "none";
+  }
+
   renderVariantView();
   updateCounter();
   updateVariantBulkCheckboxes();
@@ -1371,6 +1396,11 @@ function scheduleAutoLayout() {
 function toggleMasterMode() {
   isMasterMode = !isMasterMode;
   masterButton.classList.toggle("active", isMasterMode);
+}
+
+function toggleExcludeMode() {
+  isExcludeMode = !isExcludeMode;
+  excludeButton.classList.toggle("active", isExcludeMode);
 }
 
 function toggleUncheckedOnly() {
@@ -1508,6 +1538,7 @@ async function savePNG() {
 
 /* イベントリスナー */
 masterButton.addEventListener("click", toggleMasterMode);
+excludeButton.addEventListener("click", toggleExcludeMode);
 uncheckedButton.addEventListener("click", toggleUncheckedOnly);
 saveButton.addEventListener("click", savePNG);
 
