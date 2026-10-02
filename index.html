@@ -212,8 +212,16 @@ body.is-saving .controls {
 .variant-view-items {
   display: grid;
   grid-template-columns: repeat(var(--variant-view-column-count), var(--item-size)) var(--variant-bulk-column-width);
-  grid-template-rows: var(--item-size);
+  grid-auto-rows: var(--item-size);
   gap: var(--gap-item);
+  align-items: center;
+}
+
+/* 一括チェック欄は常に最右列・全行を縦にまたぐ */
+.variant-view-items > .variant-view-bulk-cell {
+  grid-column: -1;
+  grid-row: 1 / -1;
+  align-self: stretch;
 }
 
 .variant-view-items.no-bulk-checkbox {
@@ -1033,7 +1041,7 @@ function updateVariantBulkCheckboxes() {
   });
 }
 
-function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbox = true) {
+function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbox = true, columnCount = typeOrder.length) {
   const row = document.createElement("div");
   const header = document.createElement("div");
   const label = document.createElement("div");
@@ -1047,6 +1055,7 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
   
   itemArea.className = "variant-view-items";
   if (!showBulkCheckbox) itemArea.classList.add("no-bulk-checkbox");
+  itemArea.style.setProperty("--variant-view-column-count", Math.max(1, columnCount));
 
   const visibleItems = [];
   typeOrder.forEach(type => {
@@ -1058,10 +1067,8 @@ function createVariantViewRow(labelText, typeOrder, itemsByType, showBulkCheckbo
 
   if (showUncheckedOnly) {
     if (visibleItems.length === 0) return null;
-    itemArea.style.setProperty("--variant-view-column-count", Math.max(1, visibleItems.length));
     visibleItems.forEach(item => itemArea.appendChild(createCollectionItem(item.type, item.variant)));
   } else {
-    itemArea.style.setProperty("--variant-view-column-count", Math.max(1, typeOrder.length));
     typeOrder.forEach(type => {
       const item = itemsByType.get(type);
       if (item) {
@@ -1116,7 +1123,7 @@ function renderMobileVariantView() {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
-  const columnLimit = Math.ceil(typeOrder.length / (typeOrder.length <= 20 ? 2 : 3));
+  const columnLimit = getDynamicVariantColumnCount(typeOrder.length);
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
   
@@ -1281,8 +1288,9 @@ function renderVariantView() {
   }
 
   const typeOrder = getVariantViewTypeOrder();
+  const columnCount = getDynamicVariantColumnCount(typeOrder.length);
   getAllVariantGroups().forEach(({ variant, itemsByType }) => {
-    const row = createVariantViewRow(variant, typeOrder, itemsByType);
+    const row = createVariantViewRow(variant, typeOrder, itemsByType, true, columnCount);
     if (row) gallery.appendChild(row);
   });
 
@@ -1384,11 +1392,78 @@ function getAvailableSize() {
   };
 }
 
+function getMaxVariantImageCount() {
+  let maxCount = 1;
+  PAGES[currentPageIndex].collection.forEach(({ types }) => {
+    types.forEach(typeData => {
+      maxCount = Math.max(maxCount, getVariants(typeData).length);
+    });
+  });
+  return maxCount;
+}
+
+function getDynamicVariantColumnCount(maxCount = getMaxVariantImageCount()) {
+  const available = getAvailableSize();
+  const gap = parseFloat(getComputedStyle(root).getPropertyValue("--gap-item")) || 1;
+  const bulkWidth = isMobileView() ? 32 : (parseFloat(getComputedStyle(root).getPropertyValue("--variant-bulk-column-width")) || 22);
+  const labelWidth = isMobileView() ? 0 : (parseFloat(getComputedStyle(root).getPropertyValue("--variant-label-column-width")) || 66);
+  const sideGap = isMobileView() ? 2 : 3;
+  const maxColumnsByWidth = Math.max(1, Math.floor((available.width - labelWidth - bulkWidth - sideGap * 2 + gap) / (AUTO_FIT.minItemSize + gap)));
+  const upper = Math.max(1, Math.min(maxCount, maxColumnsByWidth));
+
+  // まず「最大variantの画像数」を基準に候補を全部調べ、
+  // 画面内に収まる中で画像サイズが最大になる列数を選ぶ。
+  let bestColumns = 1;
+  let bestSize = -Infinity;
+
+  for (let columns = 1; columns <= upper; columns++) {
+    const widthForItems = available.width - labelWidth - bulkWidth - sideGap * 2;
+    const widthSize = (widthForItems - (columns - 1) * gap) / columns;
+    if (widthSize < AUTO_FIT.minItemSize) continue;
+
+    // 高さ側は実際のvariant群を使って評価する。
+    const variantCounts = getAllVariantGroups().map(({ itemsByType }) => {
+      let count = 0;
+      itemsByType.forEach(() => count++);
+      return count;
+    });
+    const counts = variantCounts.length ? variantCounts : [0];
+    const totalRows = counts.reduce((sum, count) => sum + Math.max(1, Math.ceil(count / columns)), 0);
+    const headerHeight = document.getElementById("header-area")?.getBoundingClientRect().height || 0;
+    const gapBlock = parseFloat(getComputedStyle(root).getPropertyValue("--gap-block")) || 1;
+    const itemGap = gap;
+    let fixedHeight = isMobileView() ? counts.length * 13 : counts.length * 24;
+    let groupGaps = Math.max(0, counts.length - 1) * gapBlock;
+
+    // SPECIAL は通常のvariant列とは別枠なので、その分も高さに含める。
+    if (isMobileView()) {
+      const specialCount = PAGES[currentPageIndex].standalone.length;
+      if (specialCount > 0) {
+        fixedHeight += 13;
+        groupGaps += gapBlock;
+        const specialColumns = Math.max(1, Math.floor((available.width - 4 + itemGap) / (AUTO_FIT.minItemSize + itemGap)));
+        fixedHeight += Math.ceil(specialCount / specialColumns) * 0;
+      }
+    }
+
+    const galleryGaps = groupGaps;
+    const heightForItems = (available.height - headerHeight - fixedHeight - galleryGaps - 8) / Math.max(1, totalRows);
+    const size = Math.min(widthSize, heightForItems);
+
+    if (size > bestSize + 0.01 || (Math.abs(size - bestSize) <= 0.01 && columns > bestColumns)) {
+      bestSize = size;
+      bestColumns = columns;
+    }
+  }
+
+  return Math.max(1, bestColumns);
+}
+
 function contentFits() {
   const available = getAvailableSize();
   return (
-    gallery.getBoundingClientRect().width <= available.width &&
-    collectionContent.getBoundingClientRect().height <= available.height
+    gallery.getBoundingClientRect().width <= available.width + 1 &&
+    collectionContent.getBoundingClientRect().height <= available.height + 1
   );
 }
 
@@ -1403,7 +1478,36 @@ function findLargestItemSize() {
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
+function rebuildVariantColumns() {
+  if (!document.body.classList.contains("is-variant-view") || showUncheckedOnly) return;
+
+  const maxCount = getMaxVariantImageCount();
+  const columns = getDynamicVariantColumnCount(maxCount);
+  root.style.setProperty("--variant-view-column-count", columns);
+
+  // PC版は各variant行を同じ列数で再構築する。
+  if (!isMobileView()) {
+    const typeOrder = getVariantViewTypeOrder();
+    gallery.replaceChildren();
+    getAllVariantGroups().forEach(({ variant, itemsByType }) => {
+      const row = createVariantViewRow(variant, typeOrder, itemsByType, true, columns);
+      if (row) gallery.appendChild(row);
+    });
+
+    const standalones = PAGES[currentPageIndex].standalone;
+    if (standalones.length > 0) {
+      const standaloneTypeOrder = standalones.map(({ type }) => type);
+      const standaloneMap = new Map(standalones.map(({ type }) => [type, { type, variant: null }]));
+      const row = createVariantViewRow("special", standaloneTypeOrder, standaloneMap, false, Math.min(columns, standaloneTypeOrder.length));
+      if (row) gallery.appendChild(row);
+    }
+  }
+}
+
 function applyAutoLayout() {
+  if (document.body.classList.contains("is-variant-view") && !showUncheckedOnly) {
+    rebuildVariantColumns();
+  }
   root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
 }
 
@@ -1585,6 +1689,7 @@ function handleViewportChange() {
     renderView();
     return;
   }
+  // 画面サイズが変わるたび、最大variantを基準に列数そのものを再計算する。
   scheduleAutoLayout();
 }
 window.addEventListener("resize", handleViewportChange, { passive: true });
