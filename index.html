@@ -254,12 +254,12 @@ body.is-saving .controls {
 
 .mobile-compact-variant-items {
   display: grid;
-  grid-template-columns: repeat(var(--mobile-column-count, 8), var(--item-size));
+  grid-template-columns: repeat(var(--mobile-secondary-column-count, 7), var(--item-size));
   gap: var(--gap-item);
 }
 
 .mobile-primary-variant-items {
-  grid-template-columns: repeat(var(--mobile-column-count, 8), var(--item-size));
+  grid-template-columns: repeat(var(--mobile-primary-column-count, 10), var(--item-size));
 }
 
 /* アイテム・チェック領域 */
@@ -441,7 +441,7 @@ button {
   :root {
     --gap-item: 1px;
     --gap-block: 1px;
-    --mobile-controls-reserve: 42px; /* 固定ボタン分の下部確保領域 */
+    --mobile-controls-reserve: 35px;
   }
 
   #capture {
@@ -802,7 +802,6 @@ let currentPageIndex = 0;
 let showUncheckedOnly = false;
 let isMasterMode = false;
 let isExcludeMode = false;
-let currentMobileRows = 0;
 
 const AUTO_FIT = { minItemSize: 6, maxItemSize: 240, safetyMargin: 2 };
 const PEANUT_KEY = "special_peanut";
@@ -1110,33 +1109,18 @@ function createMobileVariantBulkCheckbox(variant) {
   return checkbox;
 }
 
-function getMobileMaxMatchingCount(typeOrder, variantsByType) {
-  let maxCount = 0;
-  const allVariants = [...MOBILE_PRIMARY_VARIANTS, ...MOBILE_SECONDARY_VARIANTS];
-  allVariants.forEach(variant => {
-    const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
-    if (matching.length > maxCount) {
-      maxCount = matching.length;
-    }
-  });
-  return maxCount || 1;
-}
-
-function renderMobileVariantView(targetRows = currentMobileRows || 3) {
-  currentMobileRows = targetRows;
+function renderMobileVariantView() {
   const typeOrder = getVariantViewTypeOrder();
   const variantsByType = new Map();
   PAGES[currentPageIndex].collection.forEach(({ types }) => {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
-  const maxMatching = getMobileMaxMatchingCount(typeOrder, variantsByType);
-  const columnLimit = Math.ceil(maxMatching / targetRows);
-  
+  const columnLimit = Math.ceil(typeOrder.length / (typeOrder.length <= 20 ? 2 : 3));
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
   
-  function createCompactVariantGroup(variant, matchingTypes) {
+  function createCompactVariantGroup(variant, matchingTypes, columnLimit, primary = false) {
     const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
     if (showUncheckedOnly && visibleTypes.length === 0) return null;
 
@@ -1155,7 +1139,9 @@ function renderMobileVariantView(targetRows = currentMobileRows || 3) {
     body.className = "mobile-compact-variant-body";
     items.className = "mobile-compact-variant-items";
 
-    items.style.setProperty("--mobile-column-count", showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
+    const colVar = primary ? "--mobile-primary-column-count" : "--mobile-secondary-column-count";
+    if (primary) items.classList.add("mobile-primary-variant-items");
+    items.style.setProperty(colVar, showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
     
     const bulkCheckbox = createMobileVariantBulkCheckbox(variant);
     control.appendChild(bulkCheckbox);
@@ -1178,7 +1164,7 @@ function renderMobileVariantView(targetRows = currentMobileRows || 3) {
   MOBILE_PRIMARY_VARIANTS.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching);
+      const g = createCompactVariantGroup(variant, matching, columnLimit, true);
       if (g) primaryArea.appendChild(g);
     }
   });
@@ -1189,7 +1175,7 @@ function renderMobileVariantView(targetRows = currentMobileRows || 3) {
   MOBILE_SECONDARY_VARIANTS.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching);
+      const g = createCompactVariantGroup(variant, matching, columnLimit, false);
       if (g) secondaryArea.appendChild(g);
     }
   });
@@ -1334,6 +1320,7 @@ function renderPagination() {
       }
     });
 
+    // 0番目(C7S4)をTOTALの左に、1番目(C7S3)をTOTALの右に振分け
     if (index === 0 && paginationLeft) {
       paginationLeft.appendChild(btn);
     } else if (index === 1 && paginationRight) {
@@ -1365,7 +1352,6 @@ function updateCounter() {
 }
 
 function renderView() {
-  currentMobileRows = 0;
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
   document.body.classList.remove("page-0", "page-1");
@@ -1390,20 +1376,19 @@ function renderView() {
   scheduleAutoLayout();
 }
 
-function contentFits() {
-  const captureRect = capture.getBoundingClientRect();
-  const galleryRect = gallery.getBoundingClientRect();
+function getAvailableSize() {
   const style = getComputedStyle(capture);
+  return {
+    width: capture.clientWidth - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) - AUTO_FIT.safetyMargin,
+    height: capture.clientHeight - (parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)) - AUTO_FIT.safetyMargin
+  };
+}
 
-  // 下部固定ボタンエリアの上端ラインを判定（Specialが絶対にボタンと被らない限界位置）
-  const paddingBottom = parseFloat(style.paddingBottom) || 0;
-  const maxBottom = captureRect.bottom - paddingBottom - AUTO_FIT.safetyMargin;
-
-  const availableWidth = captureRect.width - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) - AUTO_FIT.safetyMargin;
-
+function contentFits() {
+  const available = getAvailableSize();
   return (
-    galleryRect.width <= availableWidth + 0.5 &&
-    galleryRect.bottom <= maxBottom + 0.5
+    gallery.getBoundingClientRect().width <= available.width &&
+    collectionContent.getBoundingClientRect().height <= available.height
   );
 }
 
@@ -1418,30 +1403,8 @@ function findLargestItemSize() {
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
-/* 描画前（1タスク内）で同期計算し、チラつきゼロで2行/3行の最適解を出す処理 */
 function applyAutoLayout() {
-  if (isMobileView() && !showUncheckedOnly) {
-    // 2行の場合の最大画像サイズを判定（画面描画前のため画面上は試算過程が見えません）
-    gallery.replaceChildren();
-    renderMobileVariantView(2);
-    const size2 = findLargestItemSize();
-
-    // 3行の場合の最大画像サイズを判定
-    gallery.replaceChildren();
-    renderMobileVariantView(3);
-    const size3 = findLargestItemSize();
-
-    // 3行が同等以上のサイズ（面積）なら3行を優先採用
-    const bestRows = (size3 >= size2) ? 3 : 2;
-    const bestSize = (bestRows === 3) ? size3 : size2;
-
-    // 決定した行数・サイズで1回だけDOM構築
-    gallery.replaceChildren();
-    renderMobileVariantView(bestRows);
-    root.style.setProperty("--item-size", `${bestSize}px`);
-  } else {
-    root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
-  }
+  root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
 }
 
 function scheduleAutoLayout() {
@@ -1624,9 +1587,11 @@ function handleViewportChange() {
   }
   scheduleAutoLayout();
 }
-
 window.addEventListener("resize", handleViewportChange, { passive: true });
 window.addEventListener("orientationchange", handleViewportChange, { passive: true });
+if ("ResizeObserver" in window) {
+  new ResizeObserver(scheduleAutoLayout).observe(capture);
+}
 
 /* 初期表示 */
 renderPagination();
