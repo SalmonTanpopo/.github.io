@@ -72,10 +72,12 @@ body.page-0 #capture {
 
 #collection-content {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  position: relative;
 }
 
 /* ヘッダー & カウンター & ページネーション統合領域 */
@@ -87,6 +89,7 @@ body.page-0 #capture {
   align-items: center;
   justify-content: center;
   gap: 10px;
+  flex: 0 0 auto;
 }
 
 #counter {
@@ -135,6 +138,7 @@ body.is-saving .controls {
 /* ギャラリー & バリアントレイアウト */
 #gallery {
   width: 100%;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -288,18 +292,15 @@ body.is-saving .controls {
 
 .item.checked .check-canvas { display: block; }
 
-/* ボタン類 */
+/* ボタン類（コンテナ） */
 .controls {
   z-index: 10;
-  position: absolute;
-  top: 50%;
-  right: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: nowrap;
   gap: 15px;
   margin: 0;
-  transform: translateY(-50%);
 }
 
 button {
@@ -405,8 +406,9 @@ button {
   }
   #header-area { position: static; }
   .controls {
-    top: 18px;
-    right: 20px;
+    position: absolute;
+    top: 0px;
+    right: 0px;
     transform: none;
   }
   .variant-view-row.pc-top-label-variant {
@@ -436,32 +438,36 @@ button {
   :root {
     --gap-item: 1px;
     --gap-block: 1px;
-    --mobile-controls-reserve: 35px;
   }
 
   #capture {
-    padding: 1px 2px calc(var(--mobile-controls-reserve) + env(safe-area-inset-bottom));
+    padding: 2px 2px calc(2px + env(safe-area-inset-bottom));
     overflow: hidden;
     align-items: center;
     justify-content: flex-start;
   }
 
-  body.is-saving #capture { padding: 1px 2px; }
+  body.is-saving #capture { padding: 2px; }
 
-  body.is-variant-view #collection-content {
-    width: auto;
-    min-width: 0;
-    justify-content: flex-start;
+  #collection-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
   }
 
   #header-area {
     margin-bottom: 2px;
     gap: 6px;
   }
+
   #counter {
     font-size: 16px;
     -webkit-text-stroke: 1px #000000;
   }
+
   .page-btn {
     min-width: 50px;
     height: 24px;
@@ -546,19 +552,21 @@ button {
 
   .variant-view-bulk-checkbox { margin: 0; }
 
+  /* 下部コントロールを通常フローの独立コンテナとして再配置 */
   .controls {
-    position: fixed;
+    position: relative;
     top: auto;
     right: auto;
-    bottom: max(1px, env(safe-area-inset-bottom));
-    left: 50%;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    flex: 0 0 auto;
     gap: 3px;
-    margin: 0;
-    padding: 2px;
+    margin: 2px 0 0 0;
+    padding: 2px 4px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.16);
     border-radius: 7px;
-    transform: translateX(-50%);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
@@ -605,16 +613,17 @@ body.is-saving .mobile-compact-variant-label {
 
       <!-- TOTALの右側ボタン配置域 -->
       <div id="pagination-right"></div>
-
-      <div class="controls">
-        <button id="btn-toggle-master" type="button">マスター</button>
-        <button id="btn-toggle-exclude" type="button" style="display: none;">未獲得から除外</button>
-        <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
-        <button id="btn-save" type="button">画像保存</button>
-      </div>
     </div>
 
     <div id="gallery"></div>
+
+    <!-- 独立した下部ボタン群コンテナ -->
+    <div class="controls">
+      <button id="btn-toggle-master" type="button">マスター</button>
+      <button id="btn-toggle-exclude" type="button" style="display: none;">未獲得から除外</button>
+      <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
+      <button id="btn-save" type="button">画像保存</button>
+    </div>
 
   </div>
 </div>
@@ -1087,7 +1096,6 @@ function renderMobileVariantView() {
     return group;
   }
   
-  // 表示順に従って各variantグループを生成
   const orderedVariants = [
     ...VARIANT_DISPLAY_ORDER.filter(v => Array.from(variantsByType.values()).some(s => s.has(v))),
     ...Array.from(variantsByType.values()).flatMap(s => Array.from(s)).filter(v => !VARIANT_DISPLAY_ORDER.includes(v))
@@ -1102,7 +1110,6 @@ function renderMobileVariantView() {
     }
   });
 
-  // SPECIAL (standalone) グループの生成（一括チェック部と同幅の不可視領域を置き位置のズレを解消）
   const standalones = PAGES[currentPageIndex].standalone;
   if (standalones.length) {
     const visibleStandalones = standalones.filter(({ type }) => !(showUncheckedOnly && isItemChecked(type, null)));
@@ -1307,11 +1314,15 @@ function getAvailableSize() {
 
   const headerArea = document.getElementById("header-area");
   const headerHeight = headerArea ? headerArea.getBoundingClientRect().height : 0;
-  const headerStyle = headerArea ? getComputedStyle(headerArea) : null;
-  const headerMarginBottom = headerStyle ? parseFloat(headerStyle.marginBottom) || 0 : 0;
+
+  const controlsArea = document.querySelector(".controls");
+  let controlsHeight = 0;
+  if (controlsArea && getComputedStyle(controlsArea).display !== "none") {
+    controlsHeight = controlsArea.getBoundingClientRect().height;
+  }
 
   const availWidth = captureWidth - paddingLeft - paddingRight - AUTO_FIT.safetyMargin;
-  const availHeight = captureHeight - paddingTop - paddingBottom - headerHeight - headerMarginBottom - AUTO_FIT.safetyMargin;
+  const availHeight = captureHeight - paddingTop - paddingBottom - headerHeight - controlsHeight - 6 - AUTO_FIT.safetyMargin;
 
   return {
     width: Math.max(10, availWidth),
@@ -1340,7 +1351,6 @@ function findLargestItemSizePC() {
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
-/* 要件①・②: 最大画像数を持つvariant基準での数学的ダイレクト最高サイズ算出（画面崩れを防止） */
 function findLargestItemSizeMobile() {
   const groups = gallery.querySelectorAll(".mobile-compact-variant-group");
   if (groups.length === 0) return;
