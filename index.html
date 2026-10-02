@@ -441,7 +441,7 @@ button {
   :root {
     --gap-item: 1px;
     --gap-block: 1px;
-    --mobile-controls-reserve: 42px; /* 固定ボタンと重ならないよう余白を拡張 */
+    --mobile-controls-reserve: 42px; /* 固定ボタン分の下部確保領域 */
   }
 
   #capture {
@@ -1365,7 +1365,7 @@ function updateCounter() {
 }
 
 function renderView() {
-  currentMobileRows = 0; // ページ切り替え時にリセット
+  currentMobileRows = 0;
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
   document.body.classList.remove("page-0", "page-1");
@@ -1390,19 +1390,20 @@ function renderView() {
   scheduleAutoLayout();
 }
 
-function getAvailableSize() {
-  const style = getComputedStyle(capture);
-  return {
-    width: capture.clientWidth - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) - AUTO_FIT.safetyMargin,
-    height: capture.clientHeight - (parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)) - AUTO_FIT.safetyMargin
-  };
-}
-
 function contentFits() {
-  const available = getAvailableSize();
+  const captureRect = capture.getBoundingClientRect();
+  const galleryRect = gallery.getBoundingClientRect();
+  const style = getComputedStyle(capture);
+
+  // 下部固定ボタンエリアの上端ラインを判定（Specialが絶対にボタンと被らない限界位置）
+  const paddingBottom = parseFloat(style.paddingBottom) || 0;
+  const maxBottom = captureRect.bottom - paddingBottom - AUTO_FIT.safetyMargin;
+
+  const availableWidth = captureRect.width - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) - AUTO_FIT.safetyMargin;
+
   return (
-    gallery.getBoundingClientRect().width <= available.width &&
-    collectionContent.getBoundingClientRect().height <= available.height
+    galleryRect.width <= availableWidth + 0.5 &&
+    galleryRect.bottom <= maxBottom + 0.5
   );
 }
 
@@ -1417,72 +1418,26 @@ function findLargestItemSize() {
   return Math.max(minSize, Math.floor(low * 10) / 10);
 }
 
-/* スマホ表示時の2行/3行をDOM非破棄の数式のみで高速判定する関数 */
-function calcMobileBestRowsAndSize() {
-  const available = getAvailableSize();
-  const headerHeight = document.getElementById("header-area")?.offsetHeight || 0;
-  const availableGalleryHeight = available.height - headerHeight - 5;
-
-  const typeOrder = getVariantViewTypeOrder();
-  const variantsByType = new Map();
-  PAGES[currentPageIndex].collection.forEach(({ types }) => {
-    types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
-  });
-
-  const allVariants = [...MOBILE_PRIMARY_VARIANTS, ...MOBILE_SECONDARY_VARIANTS];
-  const groupCounts = [];
-
-  allVariants.forEach(variant => {
-    const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
-    if (matching.length > 0) groupCounts.push(matching.length);
-  });
-
-  const standalones = PAGES[currentPageIndex].standalone;
-  const hasSpecial = standalones.length > 0;
-  const maxMatching = Math.max(1, ...groupCounts);
-
-  function getCalculatedSize(rows) {
-    const C = Math.ceil(maxMatching / rows);
-    let R_sum = 0;
-    groupCounts.forEach(count => {
-      R_sum += Math.ceil(count / C);
-    });
-
-    // Special（standalone）のアイテムに必要な行数を正確に加算
-    if (hasSpecial) {
-      R_sum += Math.ceil(standalones.length / C);
-    }
-
-    const N_groups = groupCounts.length + (hasSpecial ? 1 : 0);
-
-    if (N_groups === 0 || R_sum === 0) return 48;
-
-    // グループごとのCSS構造・padding・gapに基づく正確な計算式
-    const Sw = (available.width - C - 35) / C;
-    const Sh = (availableGalleryHeight - R_sum - 15 * N_groups + 1) / R_sum;
-    return Math.min(Sw, Sh);
-  }
-
-  const size2 = getCalculatedSize(2);
-  const size3 = getCalculatedSize(3);
-
-  // 3行の方が同等以上のサイズ（面積）になる、または同サイズなら基本の3行を優先
-  const bestRows = (size3 >= size2) ? 3 : 2;
-  const rawSize = (bestRows === 3) ? size3 : size2;
-  const bestSize = Math.max(12, Math.min(AUTO_FIT.maxItemSize, Math.floor(rawSize * 10) / 10));
-
-  return { bestRows, bestSize };
-}
-
+/* 描画前（1タスク内）で同期計算し、チラつきゼロで2行/3行の最適解を出す処理 */
 function applyAutoLayout() {
   if (isMobileView() && !showUncheckedOnly) {
-    const { bestRows, bestSize } = calcMobileBestRowsAndSize();
+    // 2行の場合の最大画像サイズを判定（画面描画前のため画面上は試算過程が見えません）
+    gallery.replaceChildren();
+    renderMobileVariantView(2);
+    const size2 = findLargestItemSize();
 
-    // 目標行数が変化した時（または初期状態）のみDOMを構築（チカチカ防止）
-    if (currentMobileRows !== bestRows || !gallery.firstElementChild) {
-      gallery.replaceChildren();
-      renderMobileVariantView(bestRows);
-    }
+    // 3行の場合の最大画像サイズを判定
+    gallery.replaceChildren();
+    renderMobileVariantView(3);
+    const size3 = findLargestItemSize();
+
+    // 3行が同等以上のサイズ（面積）なら3行を優先採用
+    const bestRows = (size3 >= size2) ? 3 : 2;
+    const bestSize = (bestRows === 3) ? size3 : size2;
+
+    // 決定した行数・サイズで1回だけDOM構築
+    gallery.replaceChildren();
+    renderMobileVariantView(bestRows);
     root.style.setProperty("--item-size", `${bestSize}px`);
   } else {
     root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
@@ -1669,11 +1624,9 @@ function handleViewportChange() {
   }
   scheduleAutoLayout();
 }
+
 window.addEventListener("resize", handleViewportChange, { passive: true });
 window.addEventListener("orientationchange", handleViewportChange, { passive: true });
-if ("ResizeObserver" in window) {
-  new ResizeObserver(scheduleAutoLayout).observe(capture);
-}
 
 /* 初期表示 */
 renderPagination();
