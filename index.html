@@ -926,7 +926,7 @@ function createCollectionItem(type, variant = null) {
         nextState = (currentState === "blue") ? "false" : "blue";
       }
     } else {
-      // ③ 未獲得のみじゃないモードでの遷移処理
+      // 未獲得のみじゃないモードでの遷移処理
       if (isMasterMode) {
         // マスターモードON時：青状態、未選択、赤状態から全て黄チェックへ
         nextState = (currentState === "master") ? "true" : "master";
@@ -1024,8 +1024,9 @@ function updateVariantBulkCheckboxes() {
     const variant = checkbox.dataset.variant;
     if (!variant) return;
     const items = getRenderedVariantItems(variant);
-    const checkedCount = items.filter(item => item.classList.contains("checked")).length;
-    checkbox.checked = items.length > 0 && checkedCount === items.length;
+    // blue 以外のチェック（赤・黄）の数をカウント。青チェックは一括チェック完了とみなさない
+    const fullyCheckedCount = items.filter(item => item.classList.contains("checked") && !item.classList.contains("blue")).length;
+    checkbox.checked = items.length > 0 && fullyCheckedCount === items.length;
     checkbox.indeterminate = false;
     checkbox.title = checkbox.checked ? `${variant}をすべて解除` : `${variant}をすべてチェック`;
   });
@@ -1307,7 +1308,6 @@ function renderPagination() {
           showUncheckedOnly = false;
           uncheckedButton.classList.remove("active");
           
-          // ② 未獲得から除外をfalseに
           if (isExcludeMode) {
             isExcludeMode = false;
             excludeButton.classList.remove("active");
@@ -1337,7 +1337,8 @@ function updateCounter() {
   const keys = getCurrentPageCollectionKeys();
   const checkedCount = keys.reduce((count, key) => {
     const val = localStorage.getItem(key);
-    return count + (val === "true" || val === "checked" || val === "master" ? 1 : 0);
+    // 青チェック（blue）も TOTAL カウント対象に含める
+    return count + (val === "true" || val === "checked" || val === "master" || val === "blue" ? 1 : 0);
   }, 0);
   document.getElementById("current-count").textContent = checkedCount;
   document.getElementById("total-count").textContent = keys.length;
@@ -1423,13 +1424,11 @@ function toggleUncheckedOnly() {
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
 
   if (showUncheckedOnly) {
-    // ① 未獲得のみモードに遷移したらマスター状態をfalseに
     if (isMasterMode) {
       isMasterMode = false;
       masterButton.classList.remove("active");
     }
   } else {
-    // ② 未獲得のみじゃないモードに遷移したら未獲得から除外をfalseに
     if (isExcludeMode) {
       isExcludeMode = false;
       excludeButton.classList.remove("active");
