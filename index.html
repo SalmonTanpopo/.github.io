@@ -441,7 +441,7 @@ button {
   :root {
     --gap-item: 1px;
     --gap-block: 1px;
-    --mobile-controls-reserve: 35px;
+    --mobile-controls-reserve: 42px; /* 固定ボタンと重ならないよう余白を拡張 */
   }
 
   #capture {
@@ -1447,6 +1447,12 @@ function calcMobileBestRowsAndSize() {
     groupCounts.forEach(count => {
       R_sum += Math.ceil(count / C);
     });
+
+    // Special（standalone）のアイテムに必要な行数を正確に加算
+    if (hasSpecial) {
+      R_sum += Math.ceil(standalones.length / C);
+    }
+
     const N_groups = groupCounts.length + (hasSpecial ? 1 : 0);
 
     if (N_groups === 0 || R_sum === 0) return 48;
