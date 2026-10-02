@@ -254,12 +254,12 @@ body.is-saving .controls {
 
 .mobile-compact-variant-items {
   display: grid;
-  grid-template-columns: repeat(var(--mobile-secondary-column-count, 7), var(--item-size));
+  grid-template-columns: repeat(var(--mobile-column-count, 8), var(--item-size));
   gap: var(--gap-item);
 }
 
 .mobile-primary-variant-items {
-  grid-template-columns: repeat(var(--mobile-primary-column-count, 10), var(--item-size));
+  grid-template-columns: repeat(var(--mobile-column-count, 8), var(--item-size));
 }
 
 /* アイテム・チェック領域 */
@@ -802,6 +802,7 @@ let currentPageIndex = 0;
 let showUncheckedOnly = false;
 let isMasterMode = false;
 let isExcludeMode = false;
+let currentMobileRows = 2; // スマホ表示のデフォルト目標行数
 
 const AUTO_FIT = { minItemSize: 6, maxItemSize: 240, safetyMargin: 2 };
 const PEANUT_KEY = "special_peanut";
@@ -1109,18 +1110,35 @@ function createMobileVariantBulkCheckbox(variant) {
   return checkbox;
 }
 
-function renderMobileVariantView() {
+// スマホで最も画像数が多いvariantのアイテム数を取得する関数
+function getMobileMaxMatchingCount(typeOrder, variantsByType) {
+  let maxCount = 0;
+  const allVariants = [...MOBILE_PRIMARY_VARIANTS, ...MOBILE_SECONDARY_VARIANTS];
+  allVariants.forEach(variant => {
+    const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
+    if (matching.length > maxCount) {
+      maxCount = matching.length;
+    }
+  });
+  return maxCount || 1;
+}
+
+function renderMobileVariantView(targetRows = currentMobileRows) {
+  currentMobileRows = targetRows;
   const typeOrder = getVariantViewTypeOrder();
   const variantsByType = new Map();
   PAGES[currentPageIndex].collection.forEach(({ types }) => {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
-  const columnLimit = Math.ceil(typeOrder.length / (typeOrder.length <= 20 ? 2 : 3));
+  // 最も画像数が多いバリアントの数をもとに、目標行数に応じた列数を決定
+  const maxMatching = getMobileMaxMatchingCount(typeOrder, variantsByType);
+  const columnLimit = Math.ceil(maxMatching / targetRows);
+  
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
   
-  function createCompactVariantGroup(variant, matchingTypes, columnLimit, primary = false) {
+  function createCompactVariantGroup(variant, matchingTypes) {
     const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
     if (showUncheckedOnly && visibleTypes.length === 0) return null;
 
@@ -1139,9 +1157,8 @@ function renderMobileVariantView() {
     body.className = "mobile-compact-variant-body";
     items.className = "mobile-compact-variant-items";
 
-    const colVar = primary ? "--mobile-primary-column-count" : "--mobile-secondary-column-count";
-    if (primary) items.classList.add("mobile-primary-variant-items");
-    items.style.setProperty(colVar, showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
+    // 全グループで共通の列数をセット（一括チェックボタンの位置を完全に縦軸一致させる）
+    items.style.setProperty("--mobile-column-count", showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
     
     const bulkCheckbox = createMobileVariantBulkCheckbox(variant);
     control.appendChild(bulkCheckbox);
@@ -1164,7 +1181,7 @@ function renderMobileVariantView() {
   MOBILE_PRIMARY_VARIANTS.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching, columnLimit, true);
+      const g = createCompactVariantGroup(variant, matching);
       if (g) primaryArea.appendChild(g);
     }
   });
@@ -1175,7 +1192,7 @@ function renderMobileVariantView() {
   MOBILE_SECONDARY_VARIANTS.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching, columnLimit, false);
+      const g = createCompactVariantGroup(variant, matching);
       if (g) secondaryArea.appendChild(g);
     }
   });
@@ -1404,7 +1421,22 @@ function findLargestItemSize() {
 }
 
 function applyAutoLayout() {
-  root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
+  if (isMobileView() && !showUncheckedOnly) {
+    // まず2行で描画を試みてサイズ計算
+    gallery.replaceChildren();
+    renderMobileVariantView(2);
+    let size = findLargestItemSize();
+
+    // 2行だと画像サイズが小さくなりすぎる場合（幅が狭いスマホなど）は、可読性のため3行に切り替える
+    if (size < 18) {
+      gallery.replaceChildren();
+      renderMobileVariantView(3);
+      size = findLargestItemSize();
+    }
+    root.style.setProperty("--item-size", `${size}px`);
+  } else {
+    root.style.setProperty("--item-size", `${findLargestItemSize()}px`);
+  }
 }
 
 function scheduleAutoLayout() {
