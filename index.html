@@ -795,7 +795,7 @@ const PAGES = [
 let currentPageIndex = 0;
 let showUncheckedOnly = false;
 let isMasterMode = false;
-let isExcludeMode = false; // 「未獲得から除外」ボタンの状態（デフォルトOFF）
+let isExcludeMode = false; // 「未獲得から除外」ボタンの状態
 
 const AUTO_FIT = { minItemSize: 6, maxItemSize: 240, safetyMargin: 2 };
 const PEANUT_KEY = "special_peanut";
@@ -1115,35 +1115,13 @@ function renderMobileVariantView() {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
+  const columnLimit = (typeOrder.length > 0 && typeOrder.length < 24) ? Math.ceil(typeOrder.length / 2) : 12;
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
-
-  // エリアごとの最大アイテム数から基準となる列数を算出する関数
-  function getAreaMaxCols(variants) {
-    let maxCount = 0;
-    variants.forEach(variant => {
-      const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
-      const count = showUncheckedOnly 
-        ? matching.filter(type => !isItemChecked(type, variant)).length 
-        : matching.length;
-      if (count > maxCount) maxCount = count;
-    });
-    const rows = Math.ceil(maxCount / 10) || 1;
-    return Math.ceil(maxCount / rows) || 1;
-  }
-
-  const primaryMaxCols = getAreaMaxCols(MOBILE_PRIMARY_VARIANTS);
-  const secondaryMaxCols = getAreaMaxCols(MOBILE_SECONDARY_VARIANTS);
-
-  function createCompactVariantGroup(variant, matchingTypes, defaultCols, primary = false) {
+  
+  function createCompactVariantGroup(variant, matchingTypes, columnLimit, primary = false) {
     const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
     if (showUncheckedOnly && visibleTypes.length === 0) return null;
-
-    // 画像数に応じた列数を計算（最低でもエリア基準の列数defaultColsを維持してボタン位置を右端に揃える）
-    const itemCount = showUncheckedOnly ? visibleTypes.length : matchingTypes.length;
-    const rows = Math.ceil(itemCount / 10) || 1;
-    const calculatedCols = Math.ceil(itemCount / rows);
-    const cols = Math.max(defaultCols, calculatedCols);
 
     const group = document.createElement("div");
     const header = document.createElement("div");
@@ -1162,7 +1140,7 @@ function renderMobileVariantView() {
 
     const colVar = primary ? "--mobile-primary-column-count" : "--mobile-secondary-column-count";
     if (primary) items.classList.add("mobile-primary-variant-items");
-    items.style.setProperty(colVar, Math.max(1, cols));
+    items.style.setProperty(colVar, showUncheckedOnly ? Math.max(1, visibleTypes.length) : columnLimit);
     
     const bulkCheckbox = createMobileVariantBulkCheckbox(variant);
     control.appendChild(bulkCheckbox);
@@ -1185,7 +1163,7 @@ function renderMobileVariantView() {
   MOBILE_PRIMARY_VARIANTS.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching, primaryMaxCols, true);
+      const g = createCompactVariantGroup(variant, matching, columnLimit, true);
       if (g) primaryArea.appendChild(g);
     }
   });
@@ -1196,7 +1174,7 @@ function renderMobileVariantView() {
   MOBILE_SECONDARY_VARIANTS.forEach(variant => {
     const matching = typeOrder.filter(type => variantsByType.get(type)?.has(variant));
     if (matching.length) {
-      const g = createCompactVariantGroup(variant, matching, secondaryMaxCols, false);
+      const g = createCompactVariantGroup(variant, matching, columnLimit, false);
       if (g) secondaryArea.appendChild(g);
     }
   });
@@ -1446,13 +1424,11 @@ function toggleUncheckedOnly() {
   uncheckedButton.classList.toggle("active", showUncheckedOnly);
 
   if (showUncheckedOnly) {
-    // ① 未獲得のみモードに遷移したらマスター状態をfalseに
     if (isMasterMode) {
       isMasterMode = false;
       masterButton.classList.remove("active");
     }
   } else {
-    // ② 未獲得のみじゃないモードに遷移したら未獲得から除外をfalseに
     if (isExcludeMode) {
       isExcludeMode = false;
       excludeButton.classList.remove("active");
