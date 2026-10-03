@@ -326,6 +326,13 @@ button {
   font-family: "Noto Sans JP", sans-serif;
 }
 
+/* 切り替えボタンの幅を固定化して位置ズレを防止 */
+#btn-toggle-master,
+#btn-toggle-exclude {
+  width: 110px;
+  padding: 0;
+}
+
 #btn-toggle-unchecked.active,
 #btn-toggle-exclude.active {
   background: #ff5d04;
@@ -629,6 +636,13 @@ button {
     box-shadow: none;
   }
 
+  /* スマホ版でも幅を統一 */
+  #btn-toggle-master,
+  #btn-toggle-exclude {
+    width: 58px;
+    padding: 0;
+  }
+
   .check-canvas {
     left: 10% !important;
     top: 40% !important;
@@ -667,9 +681,9 @@ body.is-saving .mobile-variant-special-label {
 
       <div class="controls">
         <button id="btn-toggle-master" type="button">マスター</button>
-        <button id="btn-toggle-exclude" type="button" style="display: none;">未獲得から除外</button>
+        <button id="btn-toggle-exclude" type="button" style="display: none;">獲得完了</button>
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
-        <button id="btn-save" type="button">PNG画像保存</button>
+        <button id="btn-save" type="button">画像保存</button>
       </div>
     </div>
 
