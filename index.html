@@ -344,7 +344,7 @@ button {
   box-shadow: 0 0 8px rgba(255, 140, 0, 0.8);
 }
 
-/* セグメントコントロール（チェック / 除外 の2択スイッチ） */
+/* セグメントコントロール（青チェック / ゴミ箱 マークの切替スイッチ） */
 .segment-control {
   display: inline-flex;
   align-items: center;
@@ -357,29 +357,41 @@ button {
   padding: 3px;
   gap: 2px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  user-select: none;
 }
 
 .segment-btn {
   flex: 1;
   width: 50%;
   height: 100%;
-  min-width: 0;
-  padding: 0;
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 5px;
   background: transparent;
-  color: #555555;
-  font-size: 13px;
-  font-weight: bold;
-  box-shadow: none;
-  cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: none; /* 枠全体でクリック検知するため */
 }
 
 .segment-btn.active {
   background: #ff5d04;
-  color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* アイコン色・スタイルの制御 */
+.segment-btn #icon-check-svg {
+  stroke: #007bff;
+}
+.segment-btn.active #icon-check-svg {
+  stroke: #ffffff;
+}
+
+.segment-btn #icon-trash-svg {
+  stroke: #555555;
+}
+.segment-btn.active #icon-trash-svg {
+  stroke: #ffffff;
 }
 
 /* 保存用オーバーレイ */
@@ -684,9 +696,9 @@ button {
     gap: 1px;
   }
 
-  .segment-btn {
-    font-size: 9px;
-    border-radius: 4px;
+  .segment-btn svg {
+    width: 15px;
+    height: 15px;
   }
 
   .check-canvas {
@@ -728,10 +740,19 @@ body.is-saving .mobile-variant-special-label {
       <div class="controls">
         <button id="btn-toggle-master" type="button">マスター</button>
 
-        <!-- 2択の切り替えスイッチUI -->
-        <div id="exclude-mode-group" class="segment-control" style="display: none;">
-          <button id="btn-mode-check" type="button" class="segment-btn active">チェック</button>
-          <button id="btn-mode-remove" type="button" class="segment-btn">除外</button>
+        <!-- 青チェック / ゴミ箱マークのトグルスイッチ -->
+        <div id="exclude-mode-group" class="segment-control" style="display: none;" title="タップで切り替え">
+          <div id="btn-mode-check" class="segment-btn active">
+            <svg id="icon-check-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div id="btn-mode-remove" class="segment-btn">
+            <svg id="icon-trash-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </div>
         </div>
 
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
@@ -1643,18 +1664,10 @@ async function savePNG() {
 /* イベントリスナー */
 masterButton.addEventListener("click", toggleMasterMode);
 
-modeCheckBtn.addEventListener("click", () => {
-  if (isExcludeMode) {
-    isExcludeMode = false;
-    updateSegmentUI();
-  }
-});
-
-modeRemoveBtn.addEventListener("click", () => {
-  if (!isExcludeMode) {
-    isExcludeMode = true;
-    updateSegmentUI();
-  }
+/* 枠内のどこをタップしても反転（トグル）切り替え */
+excludeModeGroup.addEventListener("click", () => {
+  isExcludeMode = !isExcludeMode;
+  updateSegmentUI();
 });
 
 uncheckedButton.addEventListener("click", toggleUncheckedOnly);
