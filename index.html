@@ -636,7 +636,7 @@ button {
     box-shadow: none;
   }
 
-  /* スマホ版でも幅を統一 */
+  /* スマホ版での固定幅指定 */
   #btn-toggle-master,
   #btn-toggle-exclude {
     width: 58px;
@@ -681,7 +681,7 @@ body.is-saving .mobile-variant-special-label {
 
       <div class="controls">
         <button id="btn-toggle-master" type="button">マスター</button>
-        <button id="btn-toggle-exclude" type="button" style="display: none;">獲得完了</button>
+        <button id="btn-toggle-exclude" type="button" style="display: none;">獲得チェック</button>
         <button id="btn-toggle-unchecked" type="button">未獲得のみ</button>
         <button id="btn-save" type="button">画像保存</button>
       </div>
@@ -1326,7 +1326,7 @@ function renderPagination() {
           
           if (isExcludeMode) {
             isExcludeMode = false;
-            excludeButton.classList.remove("active");
+            updateExcludeButtonState();
           }
         }
         renderPagination();
@@ -1365,6 +1365,12 @@ function updateCounter() {
   document.getElementById("total-count").textContent = keys.length;
 }
 
+/* トグルボタンの表示・文字を更新する関数 */
+function updateExcludeButtonState() {
+  excludeButton.classList.toggle("active", isExcludeMode);
+  excludeButton.textContent = isExcludeMode ? "獲得除外" : "獲得チェック";
+}
+
 function renderView() {
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
@@ -1378,7 +1384,7 @@ function renderView() {
   if (showUncheckedOnly) {
     masterButton.style.display = "none";
     excludeButton.style.display = "inline-flex";
-    excludeButton.classList.toggle("active", isExcludeMode);
+    updateExcludeButtonState();
   } else {
     masterButton.style.display = "inline-flex";
     excludeButton.style.display = "none";
@@ -1436,7 +1442,7 @@ function toggleMasterMode() {
 
 function toggleExcludeMode() {
   isExcludeMode = !isExcludeMode;
-  excludeButton.classList.toggle("active", isExcludeMode);
+  updateExcludeButtonState();
 }
 
 function toggleUncheckedOnly() {
@@ -1451,7 +1457,7 @@ function toggleUncheckedOnly() {
   } else {
     if (isExcludeMode) {
       isExcludeMode = false;
-      excludeButton.classList.remove("active");
+      updateExcludeButtonState();
     }
   }
 
