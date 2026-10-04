@@ -327,8 +327,13 @@ button {
 }
 
 #btn-toggle-master {
-  width: 110px;
+  width: 60px;
   padding: 0;
+}
+
+#btn-toggle-master #icon-crown-svg {
+  fill: #d4af37;
+  stroke: #555555;
 }
 
 #btn-toggle-unchecked.active {
@@ -342,6 +347,11 @@ button {
   color: #ffffff;
   border-color: #ffffff;
   box-shadow: 0 0 8px rgba(255, 140, 0, 0.8);
+}
+
+#btn-toggle-master.active #icon-crown-svg {
+  fill: #ffd700;
+  stroke: #ffffff;
 }
 
 /* セグメントコントロール（青チェック / ゴミ箱 マークの切替スイッチ） */
@@ -684,8 +694,13 @@ button {
   }
 
   #btn-toggle-master {
-    width: 60px;
+    width: 36px;
     padding: 0;
+  }
+
+  #btn-toggle-master #icon-crown-svg {
+    width: 18px;
+    height: 18px;
   }
 
   .segment-control {
@@ -738,7 +753,14 @@ body.is-saving .mobile-variant-special-label {
       <div id="pagination-right"></div>
 
       <div class="controls">
-        <button id="btn-toggle-master" type="button">マスター</button>
+        <button id="btn-toggle-master" type="button" aria-label="マスターモード切り替え" title="マスターモード">
+          <svg id="icon-crown-svg" viewBox="0 0 24 24" width="24" height="24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-2-7z"/>
+            <circle cx="12" cy="3.5" r="1"/>
+            <circle cx="2" cy="3.5" r="1"/>
+            <circle cx="22" cy="3.5" r="1"/>
+          </svg>
+        </button>
 
         <!-- 青チェック / ゴミ箱マークのトグルスイッチ -->
         <div id="exclude-mode-group" class="segment-control" style="display: none;" title="タップで切り替え">
