@@ -293,24 +293,38 @@ body.is-saving .controls {
 
 .item.checked .check-canvas { display: block; }
 
-/* ボタン類 */
+/* ボタンコントロール群：Gridで中央固定レイアウトを構築 */
 .controls {
   z-index: 10;
   position: absolute;
   top: 50%;
   right: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* 左右を同幅にして真ん中のボタンを完璧に固定 */
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 15px;
+  justify-items: center;
+  gap: 12px;
   margin: 0;
   transform: translateY(-50%);
+}
+
+#btn-toggle-master,
+#exclude-mode-group {
+  grid-column: 1; /* 左列に固定 */
+}
+
+#btn-toggle-unchecked {
+  grid-column: 2; /* ど真ん中の列に固定 */
+}
+
+#btn-save {
+  grid-column: 3; /* 右列に固定 */
 }
 
 button {
   min-width: 70px;
   height: 46px;
-  padding: 0 20px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -360,7 +374,7 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 110px;
+  width: 60px;
   height: 46px;
   background: #e6e6e6;
   border: 1px solid #cccccc;
@@ -382,7 +396,7 @@ button {
   border-radius: 5px;
   background: transparent;
   transition: all 0.2s ease;
-  pointer-events: none; /* 枠全体でクリック検知するため */
+  pointer-events: none;
 }
 
 .segment-btn.active {
@@ -675,6 +689,7 @@ button {
     right: auto;
     bottom: max(1px, env(safe-area-inset-bottom));
     left: 50%;
+    grid-template-columns: 1fr auto 1fr;
     gap: 3px;
     margin: 0;
     padding: 2px;
@@ -695,7 +710,7 @@ button {
   }
 
   #btn-toggle-master {
-    width: 36px;
+    width: 50px;
     padding: 0;
   }
 
@@ -705,7 +720,7 @@ button {
   }
 
   .segment-control {
-    width: 60px;
+    width: 50px;
     height: 28px;
     border-radius: 5px;
     padding: 1px;
