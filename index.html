@@ -332,8 +332,9 @@ button {
 }
 
 #btn-toggle-master #icon-crown-svg {
-  fill: #d4af37;
-  stroke: #555555;
+  fill: #ffd700;
+  stroke: #b8860b;
+  transition: all 0.2s ease;
 }
 
 #btn-toggle-unchecked.active {
@@ -350,7 +351,7 @@ button {
 }
 
 #btn-toggle-master.active #icon-crown-svg {
-  fill: #ffd700;
+  fill: #fff700;
   stroke: #ffffff;
 }
 
@@ -754,11 +755,8 @@ body.is-saving .mobile-variant-special-label {
 
       <div class="controls">
         <button id="btn-toggle-master" type="button" aria-label="マスターモード切り替え" title="マスターモード">
-          <svg id="icon-crown-svg" viewBox="0 0 24 24" width="24" height="24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-2-7z"/>
-            <circle cx="12" cy="3.5" r="1"/>
-            <circle cx="2" cy="3.5" r="1"/>
-            <circle cx="22" cy="3.5" r="1"/>
+          <svg id="icon-crown-svg" viewBox="0 0 24 24" width="22" height="22" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.3 8.87l6.23-2.394a.5.5 0 0 1 .66.616l-2.6 11.7a1 1 0 0 1-.975.784H5.385a1 1 0 0 1-.975-.784l-2.6-11.7a.5.5 0 0 1 .66-.616L8.7 8.87z"/>
           </svg>
         </button>
 
