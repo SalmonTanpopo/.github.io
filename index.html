@@ -1240,7 +1240,7 @@ function renderMobileVariantView() {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
-  const columnLimit = 12//Math.ceil(typeOrder.length / (typeOrder.length <= 20 ? 2 : 3));
+  const columnLimit = 8//12//Math.ceil(typeOrder.length / (typeOrder.length <= 20 ? 2 : 3));
   const layout = document.createElement("div");
   layout.className = "mobile-variant-layout";
   
