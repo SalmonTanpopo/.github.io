@@ -739,6 +739,22 @@ button {
     width: 70% !important;
     height: 70% !important;
   }
+  .item.checked {
+  outline: 2px solid #ff2a2a;
+  outline-offset: -2px;
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(255, 42, 42, 0.8);
+  }
+
+.item.checked.master {
+  outline-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.9);
+  }
+
+.item.checked.blue {
+  outline-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.8);
+  }
 }
 
 body.is-saving .mobile-compact-variant-label,
