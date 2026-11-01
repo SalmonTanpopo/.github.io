@@ -102,6 +102,7 @@ body.page-0 #capture {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
 }
 
 .page-btn {
@@ -831,11 +832,11 @@ body.is-saving .mobile-variant-special-label {
 
 <script>
 const VARIANT_DISPLAY_ORDER = [
-  "normal", "gold", "gummy", "galaxy", "holofoil", "cube", "gem","cheat-master", "loot-hacker", "bounty-hunter","trick-or-treat", "quack"
+  "normal", "jeweled", "cursed", "gold", "gummy", "galaxy", "holofoil", "cube", "gem", "cheat-master", "loot-hacker", "bounty-hunter", "trick-or-treat", "quack"
 ];
 
 const MOBILE_PRIMARY_VARIANTS = [
-  "normal", "gold", "gummy", "galaxy", "cheat-master", "loot-hacker", "bounty-hunter","trick-or-treat"
+  "normal", "jeweled", "cursed", "gold", "gummy", "galaxy", "cheat-master", "loot-hacker", "bounty-hunter", "trick-or-treat"
 ];
 
 const MOBILE_SECONDARY_VARIANTS = [
@@ -843,6 +844,22 @@ const MOBILE_SECONDARY_VARIANTS = [
 ];
 
 const PAGES = [
+  {
+    label: "C7MS",
+    collection: [
+      {
+        rarity: "normal",
+        types: [
+          { type: "1", variants: ["normal", "jeweled", "cursed"] },
+          { type: "2", variants: ["normal", "jeweled", "cursed"] },
+          { type: "3", variants: ["normal", "jeweled", "cursed"] },
+          { type: "4", variants: ["normal", "jeweled", "cursed"] },
+          { type: "5", variants: ["normal", "jeweled", "cursed"] }
+        ]
+      }
+    ],
+    standalone: []
+  },
   {
     label: "C7S4",
     collection: [
@@ -1448,6 +1465,8 @@ function renderPagination() {
   if (paginationLeft) paginationLeft.replaceChildren();
   if (paginationRight) paginationRight.replaceChildren();
 
+  const splitIndex = Math.ceil(PAGES.length / 2);
+
   PAGES.forEach((page, index) => {
     const btn = document.createElement("button");
     btn.className = `page-btn${index === currentPageIndex ? " active" : ""}`;
@@ -1469,11 +1488,10 @@ function renderPagination() {
       }
     });
 
-    // 0番目(C7S4)をTOTALの左に、1番目(C7S3)をTOTALの右に振分け
-    if (index === 0 && paginationLeft) {
-      paginationLeft.appendChild(btn);
-    } else if (index === 1 && paginationRight) {
-      paginationRight.appendChild(btn);
+    if (index < splitIndex) {
+      if (paginationLeft) paginationLeft.appendChild(btn);
+    } else {
+      if (paginationRight) paginationRight.appendChild(btn);
     }
   });
 }
@@ -1509,7 +1527,8 @@ function updateSegmentUI() {
 function renderView() {
   gallery.replaceChildren();
   document.body.classList.add("is-variant-view");
-  document.body.classList.remove("page-0", "page-1");
+  
+  document.body.className = document.body.className.replace(/\bpage-\d+\b/g, "").trim();
   document.body.classList.add(`page-${currentPageIndex}`);
 
   if (uncheckedButton) {
