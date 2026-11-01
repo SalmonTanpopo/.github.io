@@ -1289,9 +1289,11 @@ function renderMobileVariantView() {
     types.forEach(typeData => variantsByType.set(typeData.type, new Set(getVariants(typeData))));
   });
   
-  const columnLimit = Math.ceil(typeOrder.length / Math.ceil(typeOrder.length / 13));
+  // C7MSページの場合は1行5個固定、それ以外のページは従来の自動計算
+  const isC7MS = PAGES[currentPageIndex].label === "C7MS";
+  const columnLimit = isC7MS ? 5 : Math.ceil(typeOrder.length / Math.ceil(typeOrder.length / 13));
+
   const layout = document.createElement("div");
-  layout.className = "mobile-variant-layout";
   
   function createCompactVariantGroup(variant, matchingTypes, columnLimit, primary = false) {
     const visibleTypes = matchingTypes.filter(type => !(showUncheckedOnly && isItemChecked(type, variant)));
