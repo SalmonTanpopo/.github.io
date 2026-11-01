@@ -42,6 +42,7 @@ body {
 }
 
 /* キャプチャ領域 */
+/* キャプチャ領域 */
 #capture {
   flex: 1;
   min-height: 0;
@@ -52,20 +53,35 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+}
+
+/* C7MS (0番目のページ)：海賊風グラデーション */
+body.page-0 #capture {
   background-image: linear-gradient(
     148deg,
-    rgba(255, 93, 4, 1),
-    rgba(255, 255, 236, 1) 18% 81%,
-    rgba(77, 84, 224, 1)
+    rgba(16, 44, 87, 1),
+    rgba(246, 238, 220, 1) 18% 81%,
+    rgba(180, 120, 40, 1)
   );
 }
 
-body.page-0 #capture {
+/* C7S4 (1番目のページ)：従来の水色と赤 */
+body.page-1 #capture {
   background-image: linear-gradient(
     148deg,
     rgba(140, 230, 255, 1),
     rgba(255, 255, 255, 1) 18% 81%,
     rgba(235, 70, 160, 1)
+  );
+}
+
+/* C7S3 (2番目のページ)：従来のオレンジと青 */
+body.page-2 #capture {
+  background-image: linear-gradient(
+    148deg,
+    rgba(255, 93, 4, 1),
+    rgba(255, 255, 236, 1) 18% 81%,
+    rgba(77, 84, 224, 1)
   );
 }
 
