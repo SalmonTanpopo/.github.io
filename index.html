@@ -1088,6 +1088,63 @@ function updateItemVisual(item, state) {
   }
 }
 
+// function createCollectionItem(type, variant = null) {
+//   const key = getStorageKey(type, variant);
+//   const state = getItemState(type, variant);
+  
+//   const item = document.createElement("div");
+//   const image = document.createElement("img");
+  
+//   item.className = "item";
+//   item.dataset.storageKey = key;
+//   item.dataset.type = type;
+//   if (variant !== null) item.dataset.variant = variant;
+  
+//   image.className = "collection-image";
+//   image.src = variant === null ? `images/special/${type}.webp` : `images/${variant}/${type}_${variant}.webp`;
+//   image.alt = variant === null ? type : `${type} ${variant}`;
+  
+//   const canvas = createCheckCanvas(state);
+//   item.append(image, canvas);
+
+//   updateItemVisual(item, state);
+
+//   item.addEventListener("click", () => {
+//     const currentState = getItemState(type, variant);
+//     let nextState;
+
+//     if (showUncheckedOnly) {
+//       if (isExcludeMode) {
+//         nextState = (currentState === "true" || currentState === "master") ? "false" : "true";
+//       } else {
+//         nextState = (currentState === "blue") ? "false" : "blue";
+//       }
+//     } else {
+//       if (isMasterMode) {
+//         nextState = (currentState === "master") ? "true" : "master";
+//       } else {
+//         if (currentState === "blue") {
+//           nextState = "true";
+//         } else {
+//           nextState = (currentState === "true" || currentState === "master") ? "false" : "true";
+//         }
+//       }
+//     }
+
+//     localStorage.setItem(key, nextState);
+//     updateItemVisual(item, nextState);
+
+//     if (showUncheckedOnly && isExcludeMode && nextState !== "false") {
+//       renderView();
+//     } else {
+//       updateCounter();
+//       updateVariantBulkCheckboxes();
+//     }
+//   });
+  
+//   return item;
+// }
+
 function createCollectionItem(type, variant = null) {
   const key = getStorageKey(type, variant);
   const state = getItemState(type, variant);
@@ -1100,8 +1157,12 @@ function createCollectionItem(type, variant = null) {
   item.dataset.type = type;
   if (variant !== null) item.dataset.variant = variant;
   
+  const pageFolder = PAGES[currentPageIndex].label;
+
   image.className = "collection-image";
-  image.src = variant === null ? `images/special/${type}.webp` : `images/${variant}/${type}_${variant}.webp`;
+  image.src = variant === null
+    ? `images/${pageFolder}/special/${type}.webp`
+    : `images/${pageFolder}/${variant}/${type}_${variant}.webp`;
   image.alt = variant === null ? type : `${type} ${variant}`;
   
   const canvas = createCheckCanvas(state);
