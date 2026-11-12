@@ -1371,7 +1371,7 @@ function renderMobileVariantView() {
   
   // C7MSページの場合は1行5個固定、それ以外のページは従来の自動計算
   const isC7MS = PAGES[currentPageIndex].label === "C7MS";
-  const columnLimit = isC7MS ? 5 : Math.ceil(typeOrder.length / Math.ceil(typeOrder.length / 13));
+  const columnLimit = isC7MS ? 7 : Math.ceil(typeOrder.length / Math.ceil(typeOrder.length / 13));
 
   const layout = document.createElement("div");
   
