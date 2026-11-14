@@ -771,8 +771,11 @@ button {
   z-index: 1;
 }
 
-.item.checked.master::after {
+/* .item.checked.master::after {
   border-color: #ffd700;
+} */
+.item.checked.master::after {
+  border-color: #ffaa00;
 }
 
 .item.checked.blue::after {
@@ -1035,6 +1038,42 @@ function isItemChecked(type, variant) {
   return state === "true" || state === "master";
 }
 
+// function drawCheckMark(canvas, state = "true") {
+//   const ctx = canvas.getContext("2d");
+//   if (!ctx) return;
+//   canvas.width = canvas.height = 200;
+//   ctx.clearRect(0, 0, 200, 200);
+//   ctx.save();
+//   ctx.scale(2, 2);
+
+//   ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+//   ctx.shadowBlur = 5;
+//   ctx.shadowOffsetX = ctx.shadowOffsetY = 2;
+
+//   ctx.beginPath();
+//   ctx.moveTo(25, 50);
+//   ctx.lineTo(45, 70);
+//   ctx.lineTo(80, 25);
+//   ctx.lineCap = ctx.lineJoin = "round";
+
+//   ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
+//   ctx.lineWidth = 30;
+//   ctx.stroke();
+
+//   ctx.strokeStyle = "#ffffff";
+//   ctx.lineWidth = 20;
+//   ctx.stroke();
+
+//   ctx.shadowColor = "transparent";
+//   let strokeColor = "#ff2a2a";
+//   if (state === "master") strokeColor = "#ffd700";
+//   else if (state === "blue") strokeColor = "#007bff";
+//   ctx.strokeStyle = strokeColor;
+//   ctx.lineWidth = 12;
+//   ctx.stroke();
+
+//   ctx.restore();
+// }
 function drawCheckMark(canvas, state = "true") {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -1063,7 +1102,7 @@ function drawCheckMark(canvas, state = "true") {
 
   ctx.shadowColor = "transparent";
   let strokeColor = "#ff2a2a";
-  if (state === "master") strokeColor = "#ffd700";
+  if (state === "master") strokeColor = "#ffaa00";
   else if (state === "blue") strokeColor = "#007bff";
   ctx.strokeStyle = strokeColor;
   ctx.lineWidth = 12;
